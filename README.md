@@ -21,16 +21,24 @@ Few-shot learning (FSL) aims to learn a classifier that can be easily adapted to
 
 Experimental results on few-shot learning datasets with ResNet-12/Conv-4 backbone. We report average results with 10,000 randomly sampled episodes for both 1-shot and 5-shot evaluation.
 
-<img src='README_imgs/results.png' width='1280'>
+<img src='README_imgs/results.png' width='800'>
 
 The configs, tensorboard snapshots and saved checkpoints can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1MWRvIDLRhBB9lL0yfLg84Ynq532gR5P6?usp=sharing).
 
+## Prerequisites
+
+The following packages are required to run the scripts:
+
+- [PyTorch >= version 1.4](https://pytorch.org)
+
+- [tensorboard](https://www.tensorflow.org/tensorboard)
+
 ## Dataset prepare
 
-The mini-/tieredimagenet data should be placed in dir "./data/miniImagenet" ("./data/tieredimagenet") with folder format
+The miniImageNet and tieredImageNet data should be placed in dir "./data/miniImagenet" ("./data/tieredimagenet") with the following format:
 
 ```
-code
+MCL
 ├── data
 │   ├── miniImagenet
 │   │   ├── train
@@ -44,10 +52,7 @@ code
 │   │   │   ├──────
 ```
 
-
-
-
-## Fast train and test
+## Fast train and test with the provided configs under different few-shot settings
 
 Example 1: MCL-Katz ResNet12 VanillaFCN GPU 0
 
@@ -60,10 +65,4 @@ Example 2: MCL ResNet12 PyramidGrid GPU 0
 ```
 sh ./fast_train_test.sh configs/miniImagenet/MEL_N5K1_R12_Grids.yaml 0
 ```
-
-We provide several config files in dir "./configs/miniImagenet/" for example
-
-
-
-
 
