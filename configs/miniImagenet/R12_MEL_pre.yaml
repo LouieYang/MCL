@@ -1,0 +1,6 @@
+k_shot: 1
+n_way: 5
+model:
+    encoder: "R12-pre"
+test:
+    batch_size: 1

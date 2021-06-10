@@ -1,0 +1,15 @@
+k_shot: 1
+train:
+    query_per_class_per_episode: 15
+    batch_size: 1
+    episode_per_epoch: 200
+    epochs: 30
+    lr_decay_epoch: 10
+    lr_decay: 0.1
+    learning_rate: 0.0005
+    optim: "SGD"
+model:
+    query: "MatchingNet"
+    encoder: "R12"
+test:
+    batch_size: 1
