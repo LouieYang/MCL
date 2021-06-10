@@ -52,7 +52,9 @@ MCL
 │   │   │   ├──────
 ```
 
-## Fast train and test with the provided configs under different few-shot settings
+The dataset can be downloaded from [Google Drive]((https://drive.google.com/drive/folders/1sXJgi9pXo8i3Jj1nk08Sxo6x7dAQjf9u?usp=sharing))
+
+## Fast train&test with the provided configs
 
 Example 1: MCL-Katz ResNet12 VanillaFCN GPU 0
 
