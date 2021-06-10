@@ -52,7 +52,7 @@ MCL
 │   │   │   ├──────
 ```
 
-The dataset can be downloaded from [Google Drive]((https://drive.google.com/drive/folders/1sXJgi9pXo8i3Jj1nk08Sxo6x7dAQjf9u?usp=sharing))
+The dataset can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1sXJgi9pXo8i3Jj1nk08Sxo6x7dAQjf9u?usp=sharing)
 
 ## Fast train&test with the provided configs
 
