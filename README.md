@@ -7,9 +7,11 @@ This repository contains the public release of the Python implementation of
 If you use this code or find this work useful for your research, please cite:
 
 ```
-@inproceedings{liu,
-  title={},
-  author={},
+@article{liu2021learning,
+  title={Learning to Affiliate: Mutual Centralized Learning for Few-shot Classification},
+  author={Liu, Yang and Zhang, Weifeng and Xiang, Chao and Zheng, Tu and Cai, Deng},
+  journal={arXiv preprint arXiv:2106.05517},
+  year={2021}
 }
 ```
 
