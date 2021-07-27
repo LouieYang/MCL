@@ -18,7 +18,6 @@ class DN4(nn.Module):
         self.neighbor_k = cfg.model.nbnn_topk
 
         self.inner_simi = InnerproductSimilarity(cfg, metric='cosine')
-        self.temperature = cfg.model.temperature
         self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, support_xf, support_y, query_xf, query_y):
@@ -32,7 +31,7 @@ class DN4(nn.Module):
 
         query_y = query_y.view(b * q)
         if self.training:
-            loss = self.criterion(similarity_matrix / self.temperature, query_y)
+            loss = self.criterion(similarity_matrix, query_y)
             return {"dn4_loss": loss}
         else:
             _, predict_labels = torch.max(similarity_matrix, 1)

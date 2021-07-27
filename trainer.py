@@ -23,7 +23,6 @@ class trainer(object):
 
         self.seed = cfg.seed
         set_seed(self.seed) # should set seed for training from scratch with Conv4 backbone
-        self.fix_random_seed_val = cfg.train.fix_random_seed_val
 
         self.n_way                 = cfg.n_way # 5
         self.k_shot                = cfg.k_shot # 5
