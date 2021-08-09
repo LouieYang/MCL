@@ -1,0 +1,9 @@
+__pycache__/
+data/miniImagenet
+data/tieredimagenet
+demo/.ipynb_checkpoints
+checkpoint/**/
+summary/**/
+snapshots/**/
+predictions/**/
+
