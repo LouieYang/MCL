@@ -16,7 +16,10 @@ class MatchingMEL(nn.Module):
         self.n_way = cfg.n_way
         self.k_shot = cfg.k_shot
         self.criterion = nn.CrossEntropyLoss()
-        self.mel_mask = MELMask(cfg)
+        self.mel_mask = MELMask(
+            cfg, gamma=cfg.model.matchingnet.mel_gamma,
+            gamma2=cfg.model.matchingnet.mel_gamma2
+        )
 
         if cfg.model.matchingnet.mel_mask == "query":
             self.score_func = self._scores_query # by default

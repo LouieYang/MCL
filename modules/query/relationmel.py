@@ -39,7 +39,10 @@ class RelationCompare(nn.Module):
         self.k_shot = cfg.k_shot
         self.rn = RelationHead(in_channels)
         self.criterion = nn.CrossEntropyLoss()
-        self.mel_mask = MELMask(cfg)
+        self.mel_mask = MELMask(
+            cfg, gamma=cfg.model.relationnet.mel_gamma, 
+            gamma2=cfg.model.relationnet.mel_gamma2
+        )
 
         if cfg.model.relationnet.mel_mask == "query":
             self.score_func = self._scores_query # by default
@@ -114,7 +117,6 @@ class RelationCompare(nn.Module):
         comb = torch.cat((support_xf, query_xf), 3).view(-1, 2 * c)
         scores = self.rn(comb).view(-1, self.n_way)
         return scores
-
 
     def __call__(self, support_xf, support_y, query_xf, query_y):
         query_mel, support_mel = self.mel_mask(support_xf, support_y, query_xf, query_y)

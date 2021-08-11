@@ -16,7 +16,9 @@ class ProtoMEL(nn.Module):
         self.n_way = cfg.n_way
         self.k_shot = cfg.k_shot
         self.criterion = nn.CrossEntropyLoss()
-        self.mel_mask = MELMask(cfg)
+        self.mel_mask = MELMask(
+            cfg, gamma=cfg.model.protonet.mel_gamma, gamma2=cfg.model.protonet.mel_gamma2
+        )
 
         self.temperature = cfg.model.protonet.temperature
         

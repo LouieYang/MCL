@@ -25,13 +25,19 @@ cfg.model.ls.gamma = 20.0
 cfg.model.protonet = AttrDict()
 cfg.model.protonet.temperature = 64
 cfg.model.protonet.mel_mask = "query" # apply to query by default
+cfg.model.protonet.mel_gamma = 20.0
+cfg.model.protonet.mel_gamma2 = 10.0
 
 cfg.model.relationnet = AttrDict()
 cfg.model.relationnet.mel_mask = "query"
+cfg.model.relationnet.mel_gamma = 20.0
+cfg.model.relationnet.mel_gamma2 = 10.0
 
 cfg.model.matchingnet = AttrDict()
 cfg.model.matchingnet.temperature = 32
 cfg.model.matchingnet.mel_mask = "query"
+cfg.model.matchingnet.mel_gamma = 20.0
+cfg.model.matchingnet.mel_gamma2 = 10.0
 
 cfg.n_way = 5
 cfg.k_shot = 5
