@@ -39,6 +39,14 @@ cfg.model.matchingnet.mel_mask = "query"
 cfg.model.matchingnet.mel_gamma = 20.0
 cfg.model.matchingnet.mel_gamma2 = 10.0
 
+cfg.model.mn4 = AttrDict()
+cfg.model.mn4.temperature = 2.0
+cfg.model.mn4.larger_shot = "average"
+
+cfg.model.dmn4 = AttrDict()
+cfg.model.dmn4.temperature = 2.0
+cfg.model.dmn4.larger_shot = "average"
+
 cfg.n_way = 5
 cfg.k_shot = 5
 

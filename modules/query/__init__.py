@@ -1,5 +1,7 @@
 from modules.query.linear import *
 from modules.query.dn4 import *
+from modules.query.mn4 import *
+from modules.query.dmn4 import *
 from modules.query.relationnet import *
 from modules.query.relationmel import *
 from modules.query.protonet import *
