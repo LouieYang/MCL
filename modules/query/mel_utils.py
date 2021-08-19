@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import modules.registry as registry
 from modules.utils import _l2norm, batched_index_select
 
-from .innerproduct_similarity import InnerproductSimilarity
+from .similarity import Similarity
 
 class MELMask(nn.Module):
 
@@ -16,7 +16,7 @@ class MELMask(nn.Module):
         self.n_way = cfg.n_way
         self.k_shot = cfg.k_shot
 
-        self.inner_simi = InnerproductSimilarity(cfg, metric='cosine')
+        self.inner_simi = Similarity(cfg, metric='cosine')
 
         self.gamma = gamma
         self.gamma2 = gamma2

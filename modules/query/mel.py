@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import modules.registry as registry
 from modules.utils import _l2norm, batched_index_select
 
-from .innerproduct_similarity import InnerproductSimilarity
+from .similarity import Similarity
 
 @registry.Query.register("MEL")
 class MEL(nn.Module):
@@ -15,7 +15,7 @@ class MEL(nn.Module):
         self.n_way = cfg.n_way
         self.k_shot = cfg.k_shot
 
-        self.inner_simi = InnerproductSimilarity(cfg, metric='cosine')
+        self.inner_simi = Similarity(cfg, metric='cosine')
         self.gamma = cfg.model.mel.gamma
         self.gamma2 = cfg.model.mel.gamma2
         self.criterion = nn.NLLLoss()

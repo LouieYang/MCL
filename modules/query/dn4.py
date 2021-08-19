@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import modules.registry as registry
 
 from modules.utils import _l2norm
-from .innerproduct_similarity import InnerproductSimilarity
+from .similarity import Similarity
 
 @registry.Query.register("DN4")
 class DN4(nn.Module):
@@ -17,12 +17,14 @@ class DN4(nn.Module):
         self.k_shot = cfg.k_shot
         self.neighbor_k = cfg.model.nbnn_topk
 
-        self.inner_simi = InnerproductSimilarity(cfg, metric='cosine')
+        self.inner_simi = Similarity(cfg, metric='cosine')
         self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, support_xf, support_y, query_xf, query_y):
         b, q, c, h, w = query_xf.shape
         s = support_xf.shape[1]
+        support_xf = support_xf.view(b, self.n_way, self.k_shot, c, h, w).permute(0, 1, 3, 2, 4, 5)
+        support_xf = support_xf.contiguous().view(b, self.n_way, c, -1)
 
         innerproduct_matrix = self.inner_simi(support_xf, support_y, query_xf, query_y)
         topk_value, _ = torch.topk(innerproduct_matrix, self.neighbor_k, -1) # [b, q, N, M_q, neighbor_k]

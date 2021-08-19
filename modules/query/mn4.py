@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import modules.registry as registry
 
 from modules.utils import batched_index_select
-from .innerproduct_similarity import InnerproductSimilarity
+from .similarity import Similarity
 
 @registry.Query.register("MN4")
 class MN4(nn.Module):
@@ -17,7 +17,7 @@ class MN4(nn.Module):
         self.n_way = cfg.n_way
         self.k_shot = cfg.k_shot
 
-        self.inner_simi = InnerproductSimilarity(cfg, metric='cosine')
+        self.inner_simi = Similarity(cfg, metric='cosine')
         self.criterion = nn.CrossEntropyLoss()
 
         self.temperature = cfg.model.mn4.temperature
@@ -46,6 +46,10 @@ class MN4(nn.Module):
         if self.k_shot_average:
             support_xf = support_xf.view(b, self.n_way, self.k_shot, c, h, w).mean(2)
             support_xf = support_xf.view(b, self.n_way, c, h * w)
+        else:
+            support_xf = support_xf.view(b, self.n_way, self.k_shot, c, h, w).permute(0, 1, 3, 2, 4, 5)
+            support_xf = support_xf.contiguous().view(b, self.n_way, c, -1)
+
         S = self.inner_simi(support_xf, support_y, query_xf, query_y)
         query_mask = self._1MNN_mask(S).float() 
         query_mask = query_mask * self.temperature

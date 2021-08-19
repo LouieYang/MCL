@@ -12,7 +12,7 @@ from tensorboardX import SummaryWriter
 
 import random
 import tqdm
-from modules.pretrain_model import make_pretrain_model
+from modules.pretrainer import make_pretrain_model
 from modules.fsl_query import make_fsl
 from dataloader import make_predataloader
 from utils import mean_confidence_interval, AverageMeter, set_seed
@@ -70,7 +70,7 @@ class Pretrainer(object):
 
     def train(self, dataloader, epoch):
         losses = AverageMeter()
-        tqdm_gen = tqdm.tqdm(dataloader)
+        tqdm_gen = tqdm.tqdm(dataloader, ncols=80)
         for iters, (x, y) in enumerate(tqdm_gen):
             x = x.to(self.device)
             y = y.to(self.device)
@@ -93,14 +93,14 @@ class Pretrainer(object):
     def validate(self, dataloader):
         accuracies = []
         acc = AverageMeter()
-        tqdm_gen = tqdm.tqdm(dataloader)
+        tqdm_gen = tqdm.tqdm(dataloader, ncols=80)
         query_y = torch.arange(self.cfg.n_way).repeat(self.cfg.test.query_per_class_per_episode)
         query_y = query_y.type(torch.LongTensor).to(self.device)
         for episode, batch in enumerate(tqdm_gen):
             batch, _ = [b.to(self.device) for b in batch]
             support_x, query_x = batch[:self.cfg.n_way].unsqueeze(0), batch[self.cfg.n_way:].unsqueeze(0)
             support_y = None
-            rewards = self.model.forward_mel(support_x, support_y, query_x, query_y)
+            rewards = self.model.forward_test(support_x, support_y, query_x, query_y)
             total_rewards = np.sum(rewards)
 
             accuracy = total_rewards / (query_y.numel())

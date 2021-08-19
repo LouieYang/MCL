@@ -92,3 +92,6 @@ cfg.pre.batch_size = 128
 cfg.pre.colorjitter = True
 cfg.pre.val_episode = 200
 cfg.pre.pretrain_num_class = 64
+
+cfg.pre.resolution = 25
+cfg.pre.pretrainer = "Linear"

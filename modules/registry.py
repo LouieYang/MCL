@@ -1,5 +1,5 @@
 from .utils import Registry
 
 Query = Registry()
-SemiQuery = Registry()
+Pretrainer = Registry()
 Encoder = Registry()
