@@ -4,6 +4,13 @@ import numpy as np
 import scipy as sp
 import scipy.stats
 
+def cfg_to_dataset(cfg):
+    dataset = ["miniImagenet", "CUB_FSL", "tieredimagenet", "Aircraft_fewshot", "tiered_meta_iNat", "meta_iNat"]
+    for d in dataset:
+        if d in cfg:
+            return d
+    raise FileNotFoundError("{} doesn't include any dataset information".format(cfg))
+
 def mean_confidence_interval(data, confidence=0.95):
     a = 1.0*np.array(data)
     n = len(a)

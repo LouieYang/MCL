@@ -12,8 +12,8 @@ class BasePretrainer(nn.Module):
 
         super().__init__()
         
-        self.n_way = cfg.n_way
-        self.k_shot = cfg.k_shot
+        self.n_way = cfg.val.n_way
+        self.k_shot = cfg.val.k_shot
         self.encoder = make_encoder(cfg)
         self.inner_simi = Similarity(cfg, metric='cosine')
         self.criterion = nn.CrossEntropyLoss()

@@ -24,8 +24,8 @@ class DistributedEvaluator(object):
         self.device = torch.device("cuda")
         self.verbose = (self.rank == 0)
 
-        self.n_way                 = cfg.n_way # 5
-        self.k_shot                = cfg.k_shot # 5
+        self.n_way                 = cfg.test.n_way # 5
+        self.k_shot                = cfg.test.k_shot # 5
         self.test_query_per_class   = cfg.test.query_per_class_per_episode  # 15
 
         self.eval_epoch = osp.basename(checkpoint_dir)

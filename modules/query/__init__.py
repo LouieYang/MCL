@@ -10,6 +10,7 @@ from modules.query.matchingnet import *
 from modules.query.matchingmel import *
 from modules.query.mel import *
 from modules.query.ls import *
+from modules.query.frn import *
 
 import modules.registry as registry
 

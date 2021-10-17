@@ -11,7 +11,7 @@ import csv
 
 from .base_datasets import BaseDataset
 
-class TieredImagenet(BaseDataset):
+class meta_iNat(BaseDataset):
     def __init__(self, cfg, phase="train"):
         super().__init__(cfg, phase)
         self.transform = self.prepare_transform(cfg, phase)
@@ -23,16 +23,13 @@ class TieredImagenet(BaseDataset):
         )
         if phase == "train":
             t = [
-                transforms.Resize([92, 92]),
-                transforms.RandomCrop(84),
+                transforms.RandomCrop(84,padding=8,padding_mode='reflect'),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 norm
             ]
         else:
             t = [
-                transforms.Resize([92, 92]),
-                transforms.CenterCrop(84),
                 transforms.ToTensor(),
                 norm
             ]

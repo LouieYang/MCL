@@ -35,8 +35,10 @@ class DistributedTrainer(object):
 
         self.device = torch.device("cuda")
 
-        self.n_way                 = cfg.n_way # 5
-        self.k_shot                = cfg.k_shot # 5
+        self.train_n_way                 = cfg.train.n_way # 5
+        self.train_k_shot                = cfg.train.k_shot # 5
+        self.val_n_way                 = cfg.val.n_way # 5
+        self.val_k_shot                = cfg.val.k_shot # 5
         self.train_query_per_class = cfg.train.query_per_class_per_episode # 10
         self.val_query_per_class   = cfg.test.query_per_class_per_episode  # 15
         self.train_episode_per_epoch = cfg.train.episode_per_epoch
@@ -92,9 +94,9 @@ class DistributedTrainer(object):
             self.lr_scheduler = StepLR(self.optim, step_size=self.lr_decay_epoch, gamma=self.lr_decay)
 
         self.snapshot_name = lambda prefix: \
-            osp.join(self.checkpoint_dir, "e{}_{}way_{}shot.pth".format(prefix, self.n_way, self.k_shot))
+            osp.join(self.checkpoint_dir, "e{}_{}way_{}shot.pth".format(prefix, self.train_n_way, self.train_k_shot))
         self.snapshot_record = lambda prefix: \
-            osp.join(self.checkpoint_dir, "e{}_{}way_{}shot.txt".format(prefix, self.n_way, self.k_shot))
+            osp.join(self.checkpoint_dir, "e{}_{}way_{}shot.txt".format(prefix, self.train_n_way, self.train_k_shot))
 
         self.best_state_dict_for_distributed = None
 
@@ -127,7 +129,7 @@ class DistributedTrainer(object):
             query_x              = query_x.to(self.device)
             query_y              = query_y.to(self.device)
 
-            rewards = self.fsl(support_x, support_y, query_x, query_y)
+            rewards = self.fsl(support_x, support_y, query_x, query_y, self.val_n_way, self.val_k_shot)
             if isinstance(rewards, tuple):
                 rewards, _ = rewards
             total_rewards = np.sum(rewards)
@@ -166,7 +168,7 @@ class DistributedTrainer(object):
             query_x              = query_x.to(self.device)
             query_y              = query_y.to(self.device)
 
-            loss = self.fsl(support_x, support_y, query_x, query_y)
+            loss = self.fsl(support_x, support_y, query_x, query_y, self.train_n_way, self.train_k_shot)
             self.optim.zero_grad()
             loss.backward()
             self.optim.step()

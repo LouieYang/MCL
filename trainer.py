@@ -24,10 +24,10 @@ class trainer(object):
         self.seed = cfg.seed
         set_seed(self.seed) # should set seed for training from scratch with Conv4 backbone
 
-        self.n_way                 = cfg.n_way # 5
-        self.k_shot                = cfg.k_shot # 5
+        self.n_way                 = cfg.train.n_way # 5
+        self.k_shot                = cfg.train.k_shot # 5
         self.train_query_per_class = cfg.train.query_per_class_per_episode # 10
-        self.val_query_per_class   = cfg.test.query_per_class_per_episode  # 15
+        self.val_query_per_class   = cfg.val.query_per_class_per_episode  # 15
         self.train_episode_per_epoch = cfg.train.episode_per_epoch
         self.prefix = osp.basename(checkpoint_dir)
         self.writer_dir = self._prepare_summary_snapshots(self.prefix, cfg)
@@ -36,6 +36,7 @@ class trainer(object):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.checkpoint_dir = checkpoint_dir
         self.epochs = cfg.train.epochs
+        self.epoch_start_val = cfg.val.epoch_start_val
 
         self.fsl = make_fsl(cfg).to(self.device)
 
@@ -108,7 +109,7 @@ class trainer(object):
             query_x              = query_x.to(self.device)
             query_y              = query_y.to(self.device)
 
-            rewards = self.fsl(support_x, support_y, query_x, query_y)
+            rewards = self.fsl(support_x, support_y, query_x, query_y, self.cfg.val.n_way, self.cfg.val.k_shot)
             if isinstance(rewards, tuple):
                 rewards, losses = rewards
                 loss_meter.update(losses.item(), len(query_x))
@@ -155,7 +156,7 @@ class trainer(object):
             query_x              = query_x.to(self.device)
             query_y              = query_y.to(self.device)
 
-            loss = self.fsl(support_x, support_y, query_x, query_y)
+            loss = self.fsl(support_x, support_y, query_x, query_y, self.cfg.train.n_way, self.cfg.train.k_shot)
             self.optim.zero_grad()
             loss.backward()
             self.optim.step()
@@ -179,6 +180,10 @@ class trainer(object):
             )
             loss_train = self.train(train_dataloader, epoch + 1)
             self.writer.add_scalar('loss_train', loss_train, epoch + 1)
+            if epoch < self.epoch_start_val:
+                self.lr_scheduler.step()
+                continue
+
             self.fsl.eval()
             with torch.no_grad():
                 val_accuracy, h, val_loss_meter = self.validate(val_dataloader)
@@ -193,7 +198,9 @@ class trainer(object):
             self.writer.add_scalar('acc_val', val_accuracy, epoch + 1)
 
             self.lr_scheduler.step()
-            #self.save_model(epoch + 1, val_accuracy, h, epoch + 1, epoch == (self.epochs - 1))
+            if self.cfg.train.checkpoint_interval > 0 and epoch + 1 % self.cfg.train.checkpoint_interval == 0:
+                self.save_model(epoch + 1, val_accuracy, h, epoch + 1)
+
             self.fsl.train()
             if self.cfg.train.fix_bn:
                 self.fix_bn()

@@ -12,9 +12,6 @@ class MEL(nn.Module):
     def __init__(self, in_channels, cfg):
         super().__init__()
 
-        self.n_way = cfg.n_way
-        self.k_shot = cfg.k_shot
-
         self.inner_simi = Similarity(cfg, metric='cosine')
         self.gamma = cfg.model.mel.gamma
         self.gamma2 = cfg.model.mel.gamma2
@@ -107,5 +104,35 @@ class MEL(nn.Module):
             rewards = [1 if predict_labels[j]==query_y[j].to(predict_labels.device) else 0 for j in range(len(query_y))]
             return rewards, loss
 
-    def forward(self, support_xf, support_y, query_xf, query_y):
+    def blockwise_katz_forward(self, support_xf, support_y, query_xf, query_y, similarity_f):
+        alpha = self.katz_factor
+        alpha_2 = alpha * alpha
+
+        S = similarity_f(support_xf, support_y, query_xf, query_y)
+        N_examples, M_q, M_s = S.shape
+        St = S.transpose(-2, -1)
+        device = S.device
+
+        P_sq = torch.exp(self.gamma * (St - St.max(-2, keepdim=True)[0]))
+        P_sq = P_sq / P_sq.sum(-2, keepdim=True)
+        P_qs = torch.exp(self.gamma2 * (S - S.max(-2, keepdim=True)[0]))
+        P_qs = P_qs / P_qs.sum(-2, keepdim=True)
+
+        inverted_matrix = torch.inverse(torch.eye(M_q, device=device)[None].repeat(N_examples, 1, 1) - alpha_2 * P_qs@P_sq)
+        katz = (alpha_2 * P_sq@inverted_matrix@P_qs).sum(-1) + (alpha * P_sq@inverted_matrix).sum(-1)
+        katz = katz / katz.sum(-1, keepdim=True)
+        predicts = katz.view(N_examples, self.n_way, -1).sum(-1)
+
+        query_y = query_y.view(N_examples)
+        loss = self.criterion(torch.log(predicts), query_y)
+        if self.training:
+            return {"MEL_loss": loss}
+        else:
+            _, predict_labels = torch.max(predicts, 1)
+            rewards = [1 if predict_labels[j]==query_y[j].to(predict_labels.device) else 0 for j in range(len(query_y))]
+            return rewards, loss
+
+    def forward(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
+        self.n_way = n_way
+        self.k_shot = k_shot
         return self.bipartite_katz_forward(support_xf, support_y, query_xf, query_y, self.averaging_based_similarities)

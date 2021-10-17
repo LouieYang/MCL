@@ -24,6 +24,7 @@ class Pretrainer(object):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.checkpoint_dir = checkpoint_dir
         self.prefix = osp.basename(checkpoint_dir)
+        self.dataset_prefix = osp.basename(cfg.data.image_dir).lower()
         self.writer = SummaryWriter(self._prepare_summary_snapshots(self.prefix, cfg))
 
         self.epochs = cfg.pre.epochs
@@ -61,7 +62,7 @@ class Pretrainer(object):
     def save_model(self, postfix=None):
         self.fsl.encoder.load_state_dict(self.model.encoder.state_dict())
         self.fsl.eval()
-        filename = "e0_pre.pth" if postfix is None else "e0_pre_{}.pth".format(postfix)
+        filename = "{}-e0_pre.pth".format(self.dataset_prefix) if postfix is None else "e{}_pre.pth".format(postfix)
         filename = osp.join(self.checkpoint_dir, filename)
         state = {
             'fsl': self.fsl.state_dict()
@@ -94,11 +95,11 @@ class Pretrainer(object):
         accuracies = []
         acc = AverageMeter()
         tqdm_gen = tqdm.tqdm(dataloader, ncols=80)
-        query_y = torch.arange(self.cfg.n_way).repeat(self.cfg.test.query_per_class_per_episode)
+        query_y = torch.arange(self.cfg.val.n_way).repeat(self.cfg.val.query_per_class_per_episode)
         query_y = query_y.type(torch.LongTensor).to(self.device)
         for episode, batch in enumerate(tqdm_gen):
             batch, _ = [b.to(self.device) for b in batch]
-            support_x, query_x = batch[:self.cfg.n_way].unsqueeze(0), batch[self.cfg.n_way:].unsqueeze(0)
+            support_x, query_x = batch[:self.cfg.test.n_way].unsqueeze(0), batch[self.cfg.test.n_way:].unsqueeze(0)
             support_y = None
             rewards = self.model.forward_test(support_x, support_y, query_x, query_y)
             total_rewards = np.sum(rewards)

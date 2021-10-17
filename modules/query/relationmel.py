@@ -35,14 +35,10 @@ class RelationCompare(nn.Module):
     def __init__(self, in_channels, cfg):
         super().__init__()
 
-        self.n_way = cfg.n_way
-        self.k_shot = cfg.k_shot
+        self.cfg = cfg
         self.rn = RelationHead(in_channels)
         self.criterion = nn.CrossEntropyLoss()
-        self.mel_mask = MELMask(
-            cfg, gamma=cfg.model.relationnet.mel_gamma, 
-            gamma2=cfg.model.relationnet.mel_gamma2
-        )
+        self.mel_mask = MELMask(cfg, gamma=cfg.model.relationnet.mel_gamma, gamma2=cfg.model.relationnet.mel_gamma2)
 
         if cfg.model.relationnet.mel_mask == "query":
             self.score_func = self._scores_query # by default
@@ -118,8 +114,11 @@ class RelationCompare(nn.Module):
         scores = self.rn(comb).view(-1, self.n_way)
         return scores
 
-    def __call__(self, support_xf, support_y, query_xf, query_y):
-        query_mel, support_mel = self.mel_mask(support_xf, support_y, query_xf, query_y)
+
+    def __call__(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
+        self.n_way = n_way
+        self.k_shot = k_shot
+        query_mel, support_mel = self.mel_mask(support_xf, support_y, query_xf, query_y, n_way, k_shot)
         scores = self.score_func(support_xf, support_y, query_xf, query_y, query_mel, support_mel)
         N = scores.shape[0]
         query_y = query_y.view(N)

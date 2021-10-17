@@ -11,8 +11,7 @@ class ProtoNet(nn.Module):
     def __init__(self, in_channels, cfg):
         super().__init__()
 
-        self.n_way = cfg.n_way
-        self.k_shot = cfg.k_shot
+        self.cfg = cfg
         self.criterion = nn.CrossEntropyLoss()
 
         self.temperature = cfg.model.protonet.temperature
@@ -31,7 +30,9 @@ class ProtoNet(nn.Module):
         scores = scores.view(b * q, -1)
         return scores
 
-    def __call__(self, support_xf, support_y, query_xf, query_y):
+    def __call__(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
+        self.n_way = n_way
+        self.k_shot = k_shot
         scores = self._scores(support_xf, support_y, query_xf, query_y)
         N = scores.shape[0]
         query_y = query_y.view(N)

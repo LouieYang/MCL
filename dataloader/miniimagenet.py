@@ -21,34 +21,19 @@ class MiniImagenet(BaseDataset):
             np.array([x / 255.0 for x in [125.3, 123.0, 113.9]]),
             np.array([x / 255.0 for x in [63.0, 62.1, 66.7]])
         )
-        if cfg.model.encoder == "FourLayer_64F":
-            if phase == "train":
-                t = [
-                    transforms.RandomHorizontalFlip(),
-                    transforms.Resize([84, 84]),
-                    transforms.ToTensor(),
-                    norm
-                ]
-            else:
-                t = [
-                    transforms.Resize([84, 84]),
-                    transforms.ToTensor(),
-                    norm
-                ]
+        if phase == "train":
+            t = [
+                transforms.Resize([92, 92]),
+                transforms.RandomCrop(84),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                norm
+            ]
         else:
-            if phase == "train":
-                t = [
-                    transforms.Resize([92, 92]),
-                    transforms.RandomCrop(84),
-                    transforms.RandomHorizontalFlip(),
-                    transforms.ToTensor(),
-                    norm
-                ]
-            else:
-                t = [
-                    transforms.Resize([92, 92]),
-                    transforms.CenterCrop(84),
-                    transforms.ToTensor(),
-                    norm
-                ]
+            t = [
+                transforms.Resize([92, 92]),
+                transforms.CenterCrop(84),
+                transforms.ToTensor(),
+                norm
+            ]
         return transforms.Compose(t)

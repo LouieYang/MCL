@@ -10,12 +10,12 @@ sys.path.append(osp.abspath(osp.join(osp.abspath(__file__), '..', '..')))
 from configs.miniimagenet_default import cfg
 from distributed_trainer import DistributedTrainer as t
 from distributed_evaluator import DistributedEvaluator as e
-from utils import synchronize, is_main_process
+from utils import synchronize, is_main_process, cfg_to_dataset
 
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--cfg', type=str, dest='cfg', default='')
+    parser.add_argument('--cfg', type=str, dest='cfg', required=True)
     parser.add_argument('-p', '--checkpoint_dir', type=str, default='')
     parser.add_argument('-c', '--checkpoint_base', type=str, dest='checkpoint_base', default='./checkpoint')
     parser.add_argument('--local_rank', '-r', type=int, default=0)
@@ -29,12 +29,12 @@ def main():
     args = parser.parse_args()
 
     os.environ["NCCL_SOCKET_IFNAME"] = args.socket_ifname
-    pardir = osp.basename(osp.abspath(osp.join(args.cfg, osp.pardir)))
+    dataset = cfg_to_dataset(args.cfg)
     if not args.checkpoint_dir:
-        args.checkpoint_dir = pardir + "_" + osp.basename(args.cfg).replace(".yaml", "")
+        args.checkpoint_dir = dataset + "_" + osp.basename(args.cfg).replace(".yaml", "")
     if args.cfg:
         cfg.merge_from_file(args.cfg)
-    cfg.data.image_dir = osp.join(cfg.data.root, pardir)
+    cfg.data.image_dir = osp.join(cfg.data.root, dataset)
 
     args.distributed = args.world_size > 1
     if args.distributed:
@@ -63,16 +63,16 @@ def main():
         shutil.copyfile(trainer.snapshot_record("best"), osp.join(snapshot_dir, osp.basename(trainer.snapshot_record("best"))))
         shutil.copytree(trainer.writer_dir, osp.join(snapshot_dir, osp.basename(trainer.writer_dir)))
 
-    if args.eval_after_train:
-        fsl = trainer.fsl
-        trainer.fsl.load_state_dict(trainer.best_state_dict_for_distributed)
-        if is_main_process():
-            print("[*] Running Evaluations ...")
-        evaluator = e(args, cfg, trainer.snapshot_name("best"), fsl)
-        accuracy = evaluator.run()
-        if is_main_process():
-            shutil.copyfile(evaluator.prediction_dir, osp.join(snapshot_dir, osp.basename(evaluator.prediction_dir)))
-            shutil.move(snapshot_dir, snapshot_dir + "_{:.3f}".format(accuracy * 100))
+    # if args.eval_after_train:
+    #     fsl = trainer.fsl
+    #     trainer.fsl.load_state_dict(trainer.best_state_dict_for_distributed)
+    #     if is_main_process():
+    #         print("[*] Running Evaluations ...")
+    #     evaluator = e(args, cfg, trainer.snapshot_name("best"), fsl)
+    #     accuracy = evaluator.run()
+    #     if is_main_process():
+    #         shutil.copyfile(evaluator.prediction_dir, osp.join(snapshot_dir, osp.basename(evaluator.prediction_dir)))
+    #         shutil.move(snapshot_dir, snapshot_dir + "_{:.3f}".format(accuracy * 100))
 
 if __name__ == "__main__":
     main()

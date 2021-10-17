@@ -13,8 +13,7 @@ class MELMask(nn.Module):
 
         super().__init__()
 
-        self.n_way = cfg.n_way
-        self.k_shot = cfg.k_shot
+        self.cfg = cfg
 
         self.inner_simi = Similarity(cfg, metric='cosine')
 
@@ -22,7 +21,10 @@ class MELMask(nn.Module):
         self.gamma2 = gamma2
         self.katz_factor = katz_factor
 
-    def forward(self, support_xf, support_y, query_xf, query_y):
+    def forward(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
+        self.n_way = n_way
+        self.k_shot = k_shot
+
         b, s, c, h, w = support_xf.shape
         q = query_xf.shape[1]
         support_xf = support_xf.view(b, self.n_way, self.k_shot, c, h, w).mean(2)

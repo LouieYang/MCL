@@ -11,7 +11,7 @@ import csv
 
 from .base_datasets import BaseDataset
 
-class TieredImagenet(BaseDataset):
+class DefaultDataset(BaseDataset):
     def __init__(self, cfg, phase="train"):
         super().__init__(cfg, phase)
         self.transform = self.prepare_transform(cfg, phase)

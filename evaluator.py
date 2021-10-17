@@ -15,8 +15,8 @@ from utils import mean_confidence_interval, AverageMeter, set_seed
 class evaluator(object):
     def __init__(self, cfg, checkpoint_dir):
 
-        self.n_way                 = cfg.n_way # 5
-        self.k_shot                = cfg.k_shot # 5
+        self.n_way                 = cfg.test.n_way # 5
+        self.k_shot                = cfg.test.k_shot # 5
         self.test_query_per_class   = cfg.test.query_per_class_per_episode  # 15
 
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -64,7 +64,7 @@ class evaluator(object):
                     query_x              = query_x.to(self.device)
                     query_y              = query_y.to(self.device)
 
-                    rewards = self.fsl(support_x, support_y, query_x, query_y)
+                    rewards = self.fsl(support_x, support_y, query_x, query_y, self.n_way, self.k_shot)
                     if isinstance(rewards, tuple):
                         rewards = rewards[0]
 

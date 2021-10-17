@@ -10,13 +10,15 @@ class Linear(nn.Module):
     def __init__(self, in_channels, cfg):
         super().__init__()
 
-        self.n_way = cfg.n_way
-        self.k_shot = cfg.k_shot
+        self.n_way = cfg.test.n_way
+        self.k_shot = cfg.test.k_shot
 
         self.in_channels = in_channels
         self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, support_xf, support_y, query_xf, query_y):
+    def forward(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
+        self.n_way = n_way
+        self.k_shot = k_shot
         assert not self.training
         device = support_xf.device
         

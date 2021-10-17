@@ -13,11 +13,10 @@ class LabelSpreading(nn.Module):
     def __init__(self, in_channels, cfg, metric='cosine'):
         super().__init__()
 
-        self.n_way = cfg.n_way
-        self.k_shot = cfg.k_shot
+        self.cfg = cfg
         self.metric = metric
 
-        self.similarity = Similarity(cfg, metric='cosine')
+        self.inner_simi = Similarity(cfg, metric='cosine')
         self.gamma = cfg.model.ls.gamma
 
         self.criterion = nn.NLLLoss()
@@ -28,7 +27,7 @@ class LabelSpreading(nn.Module):
         q = query_xf.shape[1]
         support_xf = support_xf.view(b, self.n_way, self.k_shot, c, h, w).mean(2)
         support_xf = support_xf.view(b, self.n_way, c, h * w)
-        S = self.similarity(support_xf, support_y, query_xf, query_y) # [b, q, N, M_q, M_s]
+        S = self.inner_simi(support_xf, support_y, query_xf, query_y) # [b, q, N, M_q, M_s]
         M_q = S.shape[-2]
         M_s = S.shape[2] * S.shape[-1]
         S = S.permute(0, 1, 3, 2, 4).contiguous().view(b * q, M_q, M_s)
@@ -44,7 +43,10 @@ class LabelSpreading(nn.Module):
             inner_simi = (1 - mask) * inner_simi + mask * mask_diagonal
         return inner_simi.view(b, n, h * w, h * w)
 
-    def forward(self, support_xf, support_y, query_xf, query_y):
+    def forward(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
+        self.n_way = n_way
+        self.k_shot = k_shot
+
         S = self.averaging_based_similarities(support_xf, support_y, query_xf, query_y) # [N, M_q, M_s]
         N_examples, M_q, M_s = S.shape
         b, q, c, h, w = query_xf.shape

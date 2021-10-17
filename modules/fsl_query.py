@@ -47,8 +47,7 @@ class FSLQuery(nn.Module):
         query_xf = F.adaptive_avg_pool2d(self.encoder(query_x.view(-1, 3, h, w)), 1)
         query_xf = query_xf.view(b, q, grids_q, -1).permute(0, 1, 3, 2).unsqueeze(-1)
 
-        query = self.query(support_xf, support_y, query_xf, query_y)
-        return query
+        return support_xf, query_xf
 
     def forward_PyramidFCN(self, support_x, support_y, query_x, query_y):
         b, s, c, h, w = support_x.shape
@@ -62,8 +61,7 @@ class FSLQuery(nn.Module):
 
         support_xf = self._pyramid_encoding(support_xf)
         query_xf = self._pyramid_encoding(query_xf)
-        query = self.query(support_xf, support_y, query_xf, query_y)
-        return query
+        return support_xf, query_xf
 
     def forward_FCN(self, support_x, support_y, query_x, query_y):
         b, s, c, h, w = support_x.shape
@@ -75,18 +73,18 @@ class FSLQuery(nn.Module):
         support_xf = support_xf.view(b, s, fc, fh, fw)
         query_xf = query_xf.view(b, q, fc, fh, fw)
 
-        query = self.query(support_xf, support_y, query_xf, query_y)
-        return query
+        return support_xf, query_xf
 
-    def forward(self, support_x, support_y, query_x, query_y):
+    def forward(self, support_x, support_y, query_x, query_y, n_way, k_shot):
         if self.forward_encoding == "FCN":
-            query = self.forward_FCN(support_x, support_y, query_x, query_y)
+            support_xf, query_xf = self.forward_FCN(support_x, support_y, query_x, query_y)
         elif self.forward_encoding.startswith("Grid"):
-            query = self.forward_Grid(support_x, support_y, query_x, query_y)
+            support_xf, query_xf = self.forward_Grid(support_x, support_y, query_x, query_y)
         elif self.forward_encoding.startswith("PyramidFCN"):
-            query = self.forward_PyramidFCN(support_x, support_y, query_x, query_y)
+            support_xf, query_xf = self.forward_PyramidFCN(support_x, support_y, query_x, query_y)
         else:
             raise NotImplementedError
+        query = self.query(support_xf, support_y, query_xf, query_y, n_way, k_shot)
 
         if self.training:
             query = sum(query.values())

@@ -13,27 +13,30 @@ class DN4(nn.Module):
     def __init__(self, in_channels, cfg):
         super().__init__()
 
-        self.n_way = cfg.n_way
-        self.k_shot = cfg.k_shot
-        self.neighbor_k = cfg.model.nbnn_topk
+        self.cfg = cfg
+        self.neighbor_k = 1
 
         self.inner_simi = Similarity(cfg, metric='cosine')
         self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, support_xf, support_y, query_xf, query_y):
+        self.temperature = cfg.model.dn4.temperature
+        self.k_shot_average = cfg.model.dn4.larger_shot == "average"
+
+    def forward(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
         b, q, c, h, w = query_xf.shape
         s = support_xf.shape[1]
-        support_xf = support_xf.view(b, self.n_way, self.k_shot, c, h, w).permute(0, 1, 3, 2, 4, 5)
-        support_xf = support_xf.contiguous().view(b, self.n_way, c, -1)
+        if self.k_shot_average:
+            support_xf = support_xf.view(b, n_way, k_shot, c, h, w).mean(2)
+            support_xf = support_xf.view(b, n_way, c, h * w)
 
         innerproduct_matrix = self.inner_simi(support_xf, support_y, query_xf, query_y)
         topk_value, _ = torch.topk(innerproduct_matrix, self.neighbor_k, -1) # [b, q, N, M_q, neighbor_k]
-        similarity_matrix = topk_value.mean(-1).view(b, q, self.n_way, -1).sum(-1)
-        similarity_matrix = similarity_matrix.view(b * q, self.n_way)
+        similarity_matrix = topk_value.mean(-1).view(b, q, n_way, -1).sum(-1)
+        similarity_matrix = similarity_matrix.view(b * q, n_way)
 
         query_y = query_y.view(b * q)
         if self.training:
-            loss = self.criterion(similarity_matrix, query_y)
+            loss = self.criterion(similarity_matrix * self.temperature, query_y)
             return {"dn4_loss": loss}
         else:
             _, predict_labels = torch.max(similarity_matrix, 1)

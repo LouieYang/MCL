@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import modules.registry as registry
-from modules.utils import l2distance, _l2norm
+from modules.utils import _l2norm
 
 from .mel_utils import MELMask
 
@@ -13,13 +13,9 @@ class MatchingMEL(nn.Module):
     def __init__(self, in_channels, cfg):
         super().__init__()
 
-        self.n_way = cfg.n_way
-        self.k_shot = cfg.k_shot
+        self.cfg = cfg
         self.criterion = nn.CrossEntropyLoss()
-        self.mel_mask = MELMask(
-            cfg, gamma=cfg.model.matchingnet.mel_gamma,
-            gamma2=cfg.model.matchingnet.mel_gamma2
-        )
+        self.mel_mask = MELMask(cfg, gamma=cfg.model.matchingnet.mel_gamma, gamma2=cfg.model.matchingnet.mel_gamma2)
 
         if cfg.model.matchingnet.mel_mask == "query":
             self.score_func = self._scores_query # by default
@@ -81,8 +77,11 @@ class MatchingMEL(nn.Module):
         scores = (query_xf.unsqueeze(-2) * support_proto).sum(-1).view(b * q, -1)
         return scores
 
-    def __call__(self, support_xf, support_y, query_xf, query_y):
-        query_mel, support_mel = self.mel_mask(support_xf, support_y, query_xf, query_y)
+    def __call__(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
+        self.n_way = n_way
+        self.k_shot = k_shot
+
+        query_mel, support_mel = self.mel_mask(support_xf, support_y, query_xf, query_y, n_way, k_shot)
         scores = self.score_func(support_xf, support_y, query_xf, query_y, query_mel, support_mel)
         N = scores.shape[0]
         query_y = query_y.view(N)

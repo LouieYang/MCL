@@ -21,18 +21,15 @@ class PreDataset(data.Dataset):
         x = 1
         data_folder = osp.basename(osp.abspath(cfg.data.image_dir))
 
-        if data_folder == "Cifar-100":
-            norm = transforms.Normalize((0.5071, 0.4866, 0.4409), (0.2009, 0.1984, 0.2023))
-        else:
-            norm = transforms.Normalize(
-                np.array([x / 255.0 for x in [125.3, 123.0, 113.9]]),
-                np.array([x / 255.0 for x in [63.0, 62.1, 66.7]])
-            )
+        norm = transforms.Normalize(
+            np.array([x / 255.0 for x in [125.3, 123.0, 113.9]]),
+            np.array([x / 255.0 for x in [63.0, 62.1, 66.7]])
+        )
 
         if phase == "train":
             t = [
-                transforms.ColorJitter(0.4, 0.4, 0.4),
                 transforms.RandomResizedCrop(84),
+                transforms.ColorJitter(0.4, 0.4, 0.4),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 norm
