@@ -20,6 +20,7 @@ class PretrainFRN(BasePretrainer):
         self.r = nn.Parameter(torch.zeros(2),requires_grad=False)
         self.scale = nn.Parameter(torch.FloatTensor([1.0]),requires_grad=True)
         self.num_category = cfg.pre.pretrain_num_class
+        self.criterion = nn.NLLLoss()
 
     def get_recon_dist(self,query,support,alpha,beta,Woodbury=True):
         # query: way*query_shot*resolution, d
@@ -87,8 +88,8 @@ class PretrainFRN(BasePretrainer):
         neg_l2_dist = recon_dist.neg().view(b, h * w, self.num_category).mean(1)
         logits = neg_l2_dist * self.scale
         log_prediction = F.log_softmax(logits,dim=1)
-
-        return {"pretrain_frn_loss": log_prediction}
+        loss = self.criterion(log_prediction, y)
+        return {"pretrain_frn_loss": loss}
 
     def forward_test(self, support_x, support_y, query_x, query_y):
         b, q = query_x.shape[:2]
