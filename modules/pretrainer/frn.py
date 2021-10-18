@@ -60,8 +60,8 @@ class PretrainFRN(BasePretrainer):
     def get_neg_l2_dist(self, support_xf, query_xf):
         b, q, c, h, w = query_xf.shape
 
-        support_xf = support_xf / math.sqrt(self.d)
-        query_xf = query_xf / math.sqrt(self.d)
+        support_xf = support_xf / math.sqrt(self.encoder.out_channels)
+        query_xf = query_xf / math.sqrt(self.encoder.out_channels)
 
         support_xf = support_xf.view(b, self.n_way, self.k_shot, c, -1).permute(0, 1, 2, 4, 3).contiguous()
         support_xf = support_xf.view(b, self.n_way, -1, c)
