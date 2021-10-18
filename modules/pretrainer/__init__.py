@@ -1,4 +1,6 @@
 from .linear import *
+from .frn import *
+from .frn import *
 
 import modules.registry as registry
 
