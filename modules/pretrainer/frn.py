@@ -102,8 +102,7 @@ class PretrainFRN(BasePretrainer):
         query_x = self.encoder(query_x)
         query_x = query_x.view((b, q) + query_x.shape[-3:])
 
-
-        neg_l2_dist = self.get_neg_l2_dist(support_xf, query_xf)
+        neg_l2_dist = self.get_neg_l2_dist(support_x, query_x)
         logits = neg_l2_dist * self.scale
         query_y = query_y.view(-1)
         _, predict_labels = torch.max(neg_l2_dist, 1)
