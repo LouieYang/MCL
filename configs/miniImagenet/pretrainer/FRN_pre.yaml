@@ -1,0 +1,4 @@
+pre:
+    pretrainer: "FRN"
+model:
+    encoder: "R12-pre"
