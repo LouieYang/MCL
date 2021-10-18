@@ -99,7 +99,7 @@ class Pretrainer(object):
         query_y = query_y.type(torch.LongTensor).to(self.device)
         for episode, batch in enumerate(tqdm_gen):
             batch, _ = [b.to(self.device) for b in batch]
-            support_x, query_x = batch[:self.cfg.test.n_way].unsqueeze(0), batch[self.cfg.test.n_way:].unsqueeze(0)
+            support_x, query_x = batch[:self.cfg.val.n_way].unsqueeze(0), batch[self.cfg.val.n_way:].unsqueeze(0)
             support_y = None
             rewards = self.model.forward_test(support_x, support_y, query_x, query_y)
             total_rewards = np.sum(rewards)
