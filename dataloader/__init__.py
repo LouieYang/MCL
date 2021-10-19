@@ -61,8 +61,8 @@ def make_predataloader(cfg, phase, batch_size=1):
     elif phase == "val":
         sampler = CategoriesSampler(
             dataset.label, 
-            cfg.pre.val_episode, cfg.test.n_way, 
-            1 + cfg.test.query_per_class_per_episode
+            cfg.pre.val_episode, cfg.val.n_way, 
+            1 + cfg.val.query_per_class_per_episode
         )
         dataloader = torch.utils.data.DataLoader(
             dataset, batch_sampler=sampler, num_workers=8, pin_memory=True
