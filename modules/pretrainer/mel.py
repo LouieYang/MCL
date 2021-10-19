@@ -52,7 +52,7 @@ class PretrainMEL(BasePretrainer):
         inverted_matrix = torch.inverse(torch.eye(M_q, device=device)[None].repeat(N_examples, 1, 1) - alpha_2 * P_qs@P_sq)
         katz = (alpha_2 * P_sq@inverted_matrix@P_qs).sum(-1) + (alpha * P_sq@inverted_matrix).sum(-1)
         katz = katz / katz.sum(-1, keepdim=True)
-        predict = katz.view(N_examples, self.n_way, -1).sum(-1)
+        predict = katz.view(N_examples, self.num_category, -1).sum(-1)
 
         loss = self.criterion(torch.log(predict), y)
         return {"pretrain_loss": loss}
