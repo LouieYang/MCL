@@ -19,6 +19,7 @@ class PretrainDN4(BasePretrainer):
         )
         self.num_category = cfg.pre.pretrain_num_class
         self.inner_simi = Similarity(cfg, metric='cosine')
+        self.scale = nn.Parameter(torch.FloatTensor([1.0]),requires_grad=True)
 
     def forward(self, x, y):
         enc = self.encoder(x)
@@ -27,6 +28,7 @@ class PretrainDN4(BasePretrainer):
         S = self.inner_simi(self.category_mat, None, enc, None) # [1, b, cat, res, res]
         predict = S.max(-1)[0].sum(-1)
         predict = predict.view(-1, self.num_category)
+        predict = predict * self.scale
 
         if self.training:
             loss = self.criterion(predict, y)
