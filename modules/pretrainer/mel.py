@@ -21,8 +21,8 @@ class PretrainMEL(BasePretrainer):
         self.inner_simi = Similarity(cfg, metric='cosine')
 
         self.katz_factor = cfg.model.mel.katz_factor
-        self.gamma = nn.Parameter(torch.FloatTensor([self.gamma]),requires_grad=True)
-        self.gamma2 = nn.Parameter(torch.FloatTensor([self.gamma2]),requires_grad=True)
+        self.gamma = nn.Parameter(torch.FloatTensor([cfg.model.gamma]),requires_grad=True)
+        self.gamma2 = nn.Parameter(torch.FloatTensor([cfg.model.gamma2]),requires_grad=True)
         # self.gamma = cfg.model.mel.gamma
         # self.gamma2 = cfg.model.mel.gamma2
 

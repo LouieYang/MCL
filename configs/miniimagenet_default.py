@@ -28,8 +28,8 @@ cfg.model.dmn4.is_norm = False
 cfg.model.mel = AttrDict()
 cfg.model.mel.k_q2s = -1
 cfg.model.mel.k_s2q = -1
-cfg.model.mel.gamma = 15.0
-cfg.model.mel.gamma2 = 5.0
+cfg.model.mel.gamma = 20.0
+cfg.model.mel.gamma2 = 10.0
 cfg.model.mel.katz_factor = 0.5
 
 cfg.model.ls = AttrDict()
