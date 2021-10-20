@@ -1,7 +1,0 @@
-pre:
-    pretrainer: "MEL"
-    lr_decay_milestones: [200, 300]
-    snapshot_interval: 25
-    snapshot_epoch: 0
-model:
-    encoder: "R12"
