@@ -1,0 +1,8 @@
+pre:
+    epochs: 90
+    pretrainer: "FRN"
+    lr_decay_milestones: [30, 60]
+    snapshot_interval: 5
+    snapshot_epoch: 0
+model:
+    encoder: "R12"
