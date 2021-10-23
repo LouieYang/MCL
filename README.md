@@ -21,15 +21,7 @@ Few-shot learning (FSL) aims to learn a classifier that can be easily adapted to
 
 <img src='README_imgs/arch.png' width='800'>
 
-## Few-shot Classification Results
-
-Experimental results on few-shot learning datasets with ResNet-12/Conv-4 backbone. We report average results with 10,000 randomly sampled episodes for both 1-shot and 5-shot evaluation.
-
-<img src='README_imgs/results.png' width='800'>
-
-The configs, tensorboard snapshots and saved checkpoints can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1MWRvIDLRhBB9lL0yfLg84Ynq532gR5P6?usp=sharing).
-
-## Prerequisites
+## Code Prerequisites
 
 The following packages are required to run the scripts:
 
@@ -58,17 +50,64 @@ MCL
 
 The dataset can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1sXJgi9pXo8i3Jj1nk08Sxo6x7dAQjf9u?usp=sharing)
 
-## Fast train&test with the provided configs
+## Train and test
 
-Example 1: MCL-Katz ResNet12 VanillaFCN GPU 0
-
+The train/test configs, tensorboard log and saved checkpoints are saved in the following format:
 ```
-sh ./fast_train_test.sh configs/miniImagenet/MEL_N5K1_R12_katz.yaml 0
+Dataset_Method_NwayKshot_Backbone_Accuracy (e.g., miniImagenet_MEL_katz_N5K1_R12_67.509)
+├── tensorboard_log_date
+│   ├──events.out.tfevents
+├── predictions.txt (evaluation acc)
+├── config.yaml
+├── ebest_Nway_Kshot.txt (validation best epoch .txt)
+├── ebest_Nway_Kshot.pth (validation best epocg .pth)
 ```
 
-Example 2: MCL ResNet12 PyramidGrid GPU 0
+Download the snapshot files from [Google Drive](https://drive.google.com/drive/folders/1MWRvIDLRhBB9lL0yfLg84Ynq532gR5P6?usp=sharing) and extract it into the `snapshots/` folder.
 
+### Evaluate the meta-trained model
+
+For example, MCL-Katz 5-way 1-shot ResNet12 VanillaFCN GPU 0
 ```
-sh ./fast_train_test.sh configs/miniImagenet/MEL_N5K1_R12_Grids.yaml 0
+python experiments/run_evaluator.py \
+  --cfg ./snapshots/ResNet-12/MEL_katz/VanillaFCN/miniImagenet_MEL_katz_N5K1_R12_67.509/MEL_katz_N5K1_R12.yaml \
+  -c ./snapshots/ResNet-12/MEL_katz/VanillaFCN/miniImagenet_MEL_katz_N5K1_R12_67.509/ebest_5way_1shot.pth \
+  --device 0
 ```
 
+### Pretraining
+
+We provide three pretraining config files motivated by [FRN](https://github.com/Tsingularity/FRN), DN4 and Linear Classifier. For example, FRN pretrainer on miniimagenet ResNet12 is performed by:
+```
+python experiments/run_pre.py \
+  --cfg ./configs/miniImagenet/pretrainer/FRN_pre.yaml
+  --device 0
+```
+
+The tensorboard log and pretrained model is saved in `snapshots/ResNet-12/pretrainer/`.
+
+### Meta-training
+
+For Conv-4 experiments, we directly train the model from scratch. Just select any of config files from `snapshots` folder to the `configs` directory, e.g.,
+```
+cp ./snapshots/Conv-4/**/xxx.yaml ./configs/miniImagenet/Conv-4/
+sh ./fast_train_test.sh ./configs/miniImagenet/Conv-4/*.yaml 0
+```
+
+For ResNet-12 experiments, we first select the config files by analogous: 
+```
+cp ./snapshots/ResNet-12/**/xxx.yaml ./configs/miniImagenet/ResNet-12/
+```
+Then we manually create the target checkpoint folders and copy (or soft link) the pretrained-model (e.g., `snapshots/ResNet-12/pretrainer/miniImagenet_FRN_pre/miniimagenet-e0_pre.pth`) to it:
+```
+mkdir ./checkpoint/xxx/
+cp ./snapshots/ResNet-12/pretrainer/miniImagenet_FRN_pre/miniimagenet-e0_pre.pth ./checkpoint/xxx/
+sh ./fast_train_test.sh ./configs/miniImagenet/ResNet-12/xxx.yaml 0
+```
+where `xxx` is the prefix of `.yaml` file and `0` indicates the GPU device number.
+
+## Few-shot Classification Results
+
+Experimental results on few-shot learning datasets with ResNet-12/Conv-4 backbone. We report average results with 10,000 randomly sampled episodes for both 1-shot and 5-shot evaluation.
+
+<img src='README_imgs/results.png' width='600'>
