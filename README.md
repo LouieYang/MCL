@@ -90,8 +90,8 @@ The tensorboard log and pretrained model is saved in `snapshots/ResNet-12/pretra
 
 For Conv-4 experiments, we directly train the model from scratch. Just select any of config files from `snapshots` folder to the `configs` directory, e.g.,
 ```
-cp ./snapshots/Conv-4/**/xxx.yaml ./configs/miniImagenet/Conv-4/
-sh ./fast_train_test.sh ./configs/miniImagenet/Conv-4/*.yaml 0
+cp ./snapshots/Conv-4/MEL_katz/VanillaFCN/miniImagenet_MEL_katz_N5K1_Conv4_55.747/MEL_katz_N5K1_Conv4.yaml ./configs/miniImagenet/Conv-4/
+sh ./fast_train_test.sh ./configs/miniImagenet/Conv-4/MEL_katz_N5K1_Conv4.yaml 0
 ```
 
 For ResNet-12 experiments, we first select the config files by analogous: 
