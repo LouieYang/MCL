@@ -111,3 +111,16 @@ where `xxx` is the prefix of `.yaml` file and `0` indicates the GPU device numbe
 Experimental results on few-shot learning datasets with ResNet-12/Conv-4 backbone. We report average results with 10,000 randomly sampled episodes for both 1-shot and 5-shot evaluation.
 
 <img src='README_imgs/results.png' width='600'>
+
+## Acknowledgement
+
+- Our pretraining codes and configs follow [FRN](https://github.com/Tsingularity/FRN)
+
+- The dataset we used is from [DeepEMD](https://github.com/icoz69/DeepEMD)
+
+## Contact
+
+We have tried our best to upload the correct snapshots on the google drive. However, since the config structures had been changed a lot in development (e.g., we introduce train/val/test n\_way k\_shot options instead of a single n_way k_shot in case some methods using the larger shot training), some of the `.yaml` configs in uploaded snapshots may have conflicts during loading.
+
+If you encounter any issues or have questions about using the code, feel free to contact me [lyng\_95@zju.edu.cn](lyng\_95@zju.edu.cn)
+
