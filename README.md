@@ -110,7 +110,11 @@ where `xxx` is the prefix of `.yaml` file and `0` indicates the GPU device numbe
 
 Experimental results on few-shot learning datasets with ResNet-12/Conv-4 backbone. We report average results with 10,000 randomly sampled episodes for both 1-shot and 5-shot evaluation.
 
-<img src='README_imgs/results.png' width='600'>
+<img src='README_imgs/MCL-basic-compare.png' width='600'>
+
+## MCL Centrality Plugins
+
+<img src='README_imgs/MCL-plugins.png' width='400'>
 
 ## Acknowledgement
 
