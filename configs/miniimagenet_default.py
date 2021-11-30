@@ -12,7 +12,6 @@ cfg.model.forward_encoding = "FCN"
 cfg.model.query = "DN4"
 
 cfg.model.dn4 = AttrDict()
-cfg.model.dn4.temperature = 2.0
 cfg.model.dn4.larger_shot = "group"
 
 cfg.model.mn4 = AttrDict()
@@ -61,6 +60,7 @@ cfg.train.learning_rate = 0.001
 cfg.train.lr_decay = 0.1 
 cfg.train.lr_decay_epoch = 10
 cfg.train.lr_decay_milestones = []
+cfg.train.lr_scheduler = "StepLR"
 cfg.train.adam_betas = (0.5, 0.9)
 cfg.train.sgd_mom = 0.9
 cfg.train.optim = "Adam"
@@ -71,6 +71,8 @@ cfg.train.summary_snapshot_base = "./summary/"
 cfg.train.n_way = 5
 cfg.train.k_shot = 1
 cfg.train.checkpoint_interval = -1
+cfg.train.save_train_datalist = False
+cfg.train.episode_first_dataloader = True
 
 cfg.val = AttrDict()
 cfg.val.episode = 1000
@@ -78,6 +80,7 @@ cfg.val.n_way = 5
 cfg.val.k_shot = 1
 cfg.val.query_per_class_per_episode = 15
 cfg.val.epoch_start_val = 0
+cfg.val.interval = -1
 
 cfg.test = AttrDict()
 cfg.test.query_per_class_per_episode = 15
@@ -97,6 +100,7 @@ cfg.pre.resolution = 25
 cfg.pre.lr = 0.1
 cfg.pre.lr_decay = 0.1
 cfg.pre.lr_decay_milestones = [100, 200, 250, 300]
+cfg.pre.lr_scheduler = "MultiStepLR"
 cfg.pre.snapshot_epoch = 200
 cfg.pre.snapshot_interval = 5
 

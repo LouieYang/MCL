@@ -4,5 +4,6 @@ pre:
     lr_decay_milestones: [30, 60]
     snapshot_interval: 5
     snapshot_epoch: 0
+    pretrain_num_class: 351
 model:
     encoder: "R12"

@@ -6,47 +6,35 @@ import torch.utils.data as data
 
 from .base_datasets import BaseDataset
 from .grid_datasets import GridDataset
-from .miniimagenet import MiniImagenet
-from .tieredimagenet import TieredImagenet
-from .meta_iNat import meta_iNat
-from .tiered_meta_iNat import tiered_meta_iNat
-from .default_dataset import DefaultDataset
 from .unrepeated_datasets import UnrepeatedDataset
-from .cub import CUB
 from .distributed_sampler import DistributedSampler
 from .pretrain_datasets import PreDataset
 from .samplers import CategoriesSampler
+from .transforms import resize_randomcrop, reflectpad_randomcrop
 
-def _decide_dataset(cfg, phase):
-    if cfg.model.forward_encoding.startswith("Grid"):
-        return GridDataset(cfg, phase)
-    if cfg.model.forward_encoding.startswith("Sampling"):
-        return SamplingDataset(cfg, phase)
-
+def _decide_dataset(cfg, phase, save_summary_dir=None, load_summary_dir=None):
     data_folder = osp.basename(osp.abspath(cfg.data.image_dir))
-    if data_folder == "miniImagenet":
-        dataset = MiniImagenet(cfg, phase)
-    elif data_folder == "tieredimagenet":
-        dataset = TieredImagenet(cfg, phase)
-    elif data_folder == "CUB_FSL":
-        dataset = CUB(cfg, phase)
-    elif data_folder == "meta_iNat":
-        dataset = meta_iNat(cfg, phase)
-    elif data_folder == "tiered_meta_iNat":
-        dataset = tiered_meta_iNat(cfg, phase)
+    if data_folder == "meta_iNat" or data_folder == "tiered_meta_iNat":
+        t = reflectpad_randomcrop
     else:
-        dataset = DefaultDataset(cfg, phase)
+        t = resize_randomcrop
+
+    if phase != "train" or cfg.train.episode_first_dataloader:
+        if cfg.model.forward_encoding.startswith("Grid"):
+            dataset = GridDataset(cfg, phase, t)
+        else:
+            dataset = BaseDataset(cfg, phase, t)
+    else:
+        dataset = UnrepeatedDataset(cfg, phase, t)
+
+    if save_summary_dir is not None:
+        dataset.save_summary_datalist(save_summary_dir)
+    if load_summary_dir is not None:
+        dataset.save_summary_datalist(load_summary_dir)
     return dataset
 
-def make_dataloader(cfg, phase, batch_size=1):
-    dataset = _decide_dataset(cfg, phase)
-    dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True
-    )
-    return dataloader
-
-def make_unrepeated_dataloader(cfg, phase, batch_size=1):
-    dataset = UnrepeatedDataset(cfg, phase)
+def make_dataloader(cfg, phase, batch_size=1, save_summary_dir=None, load_summary_dir=None):
+    dataset = _decide_dataset(cfg, phase, save_summary_dir, load_summary_dir)
     dataloader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True
     )
@@ -71,8 +59,11 @@ def make_predataloader(cfg, phase, batch_size=1):
         raise NotImplementedError
     return dataloader
 
-def make_distributed_dataloader(cfg, phase, batch_size, distributed_info, epoch=0):
-    dataset = _decide_dataset(cfg, phase)
+def make_distributed_dataloader(cfg, phase, batch_size, distributed_info, epoch=0, pretrain=False):
+    if pretrain:
+        dataset = PreDataset(cfg, phase)
+    else:
+        dataset = _decide_dataset(cfg, phase, None, None)
     sampler = DistributedSampler(
         dataset, 
         num_replicas=distributed_info["num_replicas"],

@@ -122,6 +122,13 @@ Experimental results on few-shot learning datasets with ResNet-12/Conv-4 backbon
 
 - The dataset we used is from [DeepEMD](https://github.com/icoz69/DeepEMD)
 
+## Start your own methods
+
+We reimplement many of state-of-the-art methods in our unified framework according to their original implementations, *i.e.*, 
+DN4, DeepEMD, FRN, DSN, MetaOptNet, R2D2, CTX, Baseline, Baseline++, NegativeMargin, ProtoNet, RelationNet, MatchingNet.
+
+It is easy to implement your own method in our unified framework by adding the similar `your-own-method.py` in the directory `./modules/query/` like the others.
+
 ## Contact
 
 We have tried our best to upload the correct snapshots on the google drive. However, since the config structures had been changed a lot in development (e.g., we introduce train/val/test n\_way k\_shot options instead of a single n_way k_shot in case some methods using the larger shot training), some of the `.yaml` configs in uploaded snapshots may have conflicts during loading.

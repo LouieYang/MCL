@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import glob
 from torch.optim import Adam, SGD
-from torch.optim.lr_scheduler import MultiStepLR
+from torch.optim.lr_scheduler import MultiStepLR, CosineAnnealingLR
 import numpy as np
 from time import gmtime, strftime
 from tensorboardX import SummaryWriter
@@ -15,7 +15,7 @@ import tqdm
 from modules.pretrainer import make_pretrain_model
 from modules.fsl_query import make_fsl
 from dataloader import make_predataloader
-from utils import mean_confidence_interval, AverageMeter, set_seed
+from engines.utils import mean_confidence_interval, AverageMeter, set_seed
 
 class Pretrainer(object):
     def __init__(self, cfg, checkpoint_dir):
@@ -36,13 +36,33 @@ class Pretrainer(object):
         self.lr_decay_milestones = cfg.pre.lr_decay_milestones
 
         self.optim = SGD(
-            self.model.parameters(), 
+            [{'params': self.model.parameters(), 'initial_lr': self.lr}], 
             lr=self.lr, 
             momentum=cfg.train.sgd_mom, 
             weight_decay=cfg.train.sgd_weight_decay,
             nesterov=True
         )
-        self.lr_scheduler = MultiStepLR(self.optim, milestones=self.lr_decay_milestones, gamma=self.lr_decay)
+        pths = [osp.basename(f) for f in glob.glob(osp.join(checkpoint_dir, "*.pth")) if "best" not in f]
+        if pths:
+            pths_epoch = [''.join(filter(str.isdigit, f[:f.find('_')])) for f in pths]
+            pths = [p for p, e in zip(pths, pths_epoch) if e]
+            pths_epoch = [int(e) for e in pths_epoch if e]
+            self.train_start_epoch = max(pths_epoch)
+            c = osp.join(checkpoint_dir, pths[pths_epoch.index(self.train_start_epoch)])
+            state_dict = torch.load(c)
+            self.model.load_state_dict(state_dict["fsl"], strict=False)
+            print("[*] Continue training from checkpoints: {}".format(c))
+            lr_scheduler_last_epoch = self.train_start_epoch
+            if "optimizer" in state_dict and state_dict["optimizer"] is not None:
+                self.optim.load_state_dict(state_dict["optimizer"])
+        else:
+            self.train_start_epoch = 0
+            lr_scheduler_last_epoch = -1
+
+        if cfg.pre.lr_scheduler == "CosineAnnealingLR":
+            self.lr_scheduler = CosineAnnealingLR(self.optim, T_max=cfg.pre.epochs, last_epoch=lr_scheduler_last_epoch)
+        else:
+            self.lr_scheduler = MultiStepLR(self.optim, milestones=self.lr_decay_milestones, gamma=self.lr_decay, last_epoch=lr_scheduler_last_epoch)
         self.fsl = make_fsl(cfg).to(self.device)
 
         self.cfg = cfg
@@ -71,7 +91,7 @@ class Pretrainer(object):
 
     def train(self, dataloader, epoch):
         losses = AverageMeter()
-        tqdm_gen = tqdm.tqdm(dataloader, ncols=80)
+        tqdm_gen = tqdm.tqdm(dataloader, ncols=80, leave=False)
         for iters, (x, y) in enumerate(tqdm_gen):
             x = x.to(self.device)
             y = y.to(self.device)
@@ -94,7 +114,7 @@ class Pretrainer(object):
     def validate(self, dataloader):
         accuracies = []
         acc = AverageMeter()
-        tqdm_gen = tqdm.tqdm(dataloader, ncols=80)
+        tqdm_gen = tqdm.tqdm(dataloader, ncols=80, leave=False)
         query_y = torch.arange(self.cfg.val.n_way).repeat(self.cfg.val.query_per_class_per_episode)
         query_y = query_y.type(torch.LongTensor).to(self.device)
         for episode, batch in enumerate(tqdm_gen):
@@ -121,7 +141,8 @@ class Pretrainer(object):
         set_seed(1)
         dataloader = make_predataloader(self.cfg, phase="train", batch_size=self.cfg.pre.batch_size)
         val_dataloader = make_predataloader(self.cfg, phase="val")
-        for epoch in range(self.epochs):
+        tqdm_gen = tqdm.tqdm(range(self.train_start_epoch, self.epochs), ncols=80)
+        for epoch in tqdm_gen:
             epoch_log = epoch + 1
             
             loss_train = self.train(dataloader, epoch_log)
@@ -134,14 +155,15 @@ class Pretrainer(object):
                     test_accuracy, h = self.validate(val_dataloader)
 
                 self.writer.add_scalar('acc_val', test_accuracy, epoch_log)
-                mesg = "\t Testing epoch {} validation accuracy: {:.3f}".format(epoch_log, test_accuracy)
-                print(mesg)
+                # mesg = "\t Testing epoch {} validation accuracy: {:.3f}".format(epoch_log, test_accuracy)
+                # print(mesg)
                 if test_accuracy > best_accuracy:
                     best_accuracy = test_accuracy
                     self.save_model()
                     best_epoch = epoch_log
 
-                self.save_model(postfix=epoch_log)
-                print("Current best epoch: {}, accuracy: {:.3f}".format(best_epoch, best_accuracy))
-
+                # self.save_model(postfix=epoch_log)
+                # print("Current best epoch: {}, accuracy: {:.3f}".format(best_epoch, best_accuracy))
+                mesg = "loss/val: {:.3f}/{:.4f}, best val: {:.4f}({})".format(loss_train, test_accuracy, best_accuracy, best_epoch)
+                tqdm_gen.set_description(mesg)
                 self.model.train()

@@ -12,9 +12,8 @@ import csv
 from .base_datasets import BaseDataset
 
 class GridDataset(BaseDataset):
-    def __init__(self, cfg, phase="train"):
-        super().__init__(cfg, phase)
-        self.transform = self.prepare_transform(cfg, phase)
+    def __init__(self, cfg, phase="train", transform=None):
+        super().__init__(cfg, phase, transform)
 
         self.forward_encoding = cfg.model.forward_encoding
         self.pyramid_list = self._parse_encoding_params()
@@ -72,26 +71,6 @@ class GridDataset(BaseDataset):
                 patch=self.transform(patch)
                 patches_list.append(patch)
         return patches_list
-
-    def prepare_transform(self, cfg, phase):
-        norm = transforms.Normalize(
-            np.array([x / 255.0 for x in [125.3, 123.0, 113.9]]),
-            np.array([x / 255.0 for x in [63.0, 62.1, 66.7]])
-        )
-        if phase == "train":
-            t = [
-                transforms.Resize([84, 84]),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                norm
-            ]
-        else:
-            t = [
-                transforms.Resize([84, 84]),
-                transforms.ToTensor(),
-                norm
-            ]
-        return transforms.Compose(t)
 
     def _get_griditems(self, img):
         pyramid_list = []

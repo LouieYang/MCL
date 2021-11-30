@@ -8,10 +8,12 @@ import numpy as np
 import random
 from PIL import Image
 import csv
-from abc import ABC, abstractmethod
+import pickle
 
-class BaseDataset(data.Dataset, ABC):
-    def __init__(self, cfg, phase="train"):
+from .transforms import resize_randomcrop
+
+class BaseDataset(data.Dataset):
+    def __init__(self, cfg, phase="train", transform=None):
         super().__init__()
 
         if phase == "train":
@@ -25,11 +27,10 @@ class BaseDataset(data.Dataset, ABC):
             self.k_shot = cfg.test.k_shot
 
         self.data_list = self.prepare_data_list(cfg, phase)
-        self.transform = self.prepare_transform(cfg, phase)
-
-    @abstractmethod
-    def prepare_transform(self, cfg, phase):
-        pass
+        if transform is None:
+            self.transform = resize_randomcrop(phase)
+        else:
+            self.transform = transform(phase)
 
     def prepare_data_list(self, cfg, phase):
         folder = osp.join(cfg.data.image_dir, phase)
@@ -101,3 +102,13 @@ class BaseDataset(data.Dataset, ABC):
         query_x = query_x[randperm]
         query_y = query_y[randperm]
         return support_x, support_y, query_x, query_y
+
+    def save_summary_datalist(self, save_dir):
+        # saving datalist to summary for better reproducing results
+        with open(save_dir, 'wb') as f:
+            pickle.dump(self.data_list, f)
+
+    def load_summary_datalist(self, load_dir):
+        # only for reproducing report results
+        with open(load_dir, "rb") as f:
+            self.data_list = pickle.load(f)

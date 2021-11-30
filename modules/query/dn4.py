@@ -12,14 +12,21 @@ class DN4(nn.Module):
     
     def __init__(self, in_channels, cfg):
         super().__init__()
+        """
+        @inproceedings{li2019DN4,
+            title={Revisiting Local Descriptor based Image-to-Class Measure for Few-shot Learning},
+            author={Li, Wenbin and Wang, Lei and Xu, Jinglin and Huo, Jing and Gao Yang and Luo, Jiebo},
+            booktitle={CVPR},
+            year={2019}
+        }
+        https://github.com/WenbinLee/DN4
+        """
 
         self.cfg = cfg
         self.neighbor_k = 1
 
         self.inner_simi = Similarity(cfg, metric='cosine')
         self.criterion = nn.CrossEntropyLoss()
-
-        self.temperature = cfg.model.dn4.temperature
         self.k_shot_average = cfg.model.dn4.larger_shot == "average"
 
     def forward(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
@@ -36,7 +43,7 @@ class DN4(nn.Module):
 
         query_y = query_y.view(b * q)
         if self.training:
-            loss = self.criterion(similarity_matrix * self.temperature, query_y)
+            loss = self.criterion(similarity_matrix, query_y)
             return {"dn4_loss": loss}
         else:
             _, predict_labels = torch.max(similarity_matrix, 1)

@@ -6,8 +6,8 @@ import argparse
 sys.path.append(osp.abspath(osp.join(osp.abspath(__file__), '..', '..')))
 
 from configs.miniimagenet_default import cfg
-from pretrainer import Pretrainer as t
-from utils import cfg_to_dataset
+from engines.pretrainer import Pretrainer as t
+from experiments.utils import cfg_to_dataset
 
 def main():
     parser = argparse.ArgumentParser()

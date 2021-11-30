@@ -10,7 +10,9 @@ from tqdm import tqdm
 import random
 from modules.fsl_query import make_fsl
 from dataloader import make_distributed_dataloader
-from utils import mean_confidence_interval, AverageMeter, set_seed, reduce_loss_dict, get_world_size, synchronize
+
+from engines.utils import mean_confidence_interval, AverageMeter, set_seed
+from engines.distributed_utils import reduce_loss_dict, get_world_size, synchronize
 
 class DistributedEvaluator(object):
     def __init__(self, args, cfg, checkpoint_dir, fsl=None):

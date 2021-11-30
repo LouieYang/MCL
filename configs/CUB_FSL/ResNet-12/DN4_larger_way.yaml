@@ -1,0 +1,16 @@
+train:
+    batch_size: 1
+    epochs: 500
+    learning_rate: 0.1
+    lr_decay: 0.1
+    lr_decay_milestones: [200, 300, 400]
+    optim: "SGD"
+    episode_first_dataloader: False
+    n_way: 10
+model:
+    query: "DN4"
+    encoder: "R12"
+test:
+    batch_size: 1
+val:
+    interval: 20

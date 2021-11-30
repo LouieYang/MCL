@@ -1,0 +1,19 @@
+train:
+    episode_per_epoch: 200
+    batch_size: 1
+    epochs: 40
+    learning_rate: 0.0005
+    lr_decay: 0.5
+    optim: "SGD"
+    fix_bn: True
+model:
+    query: "MEL"
+    encoder: "WRN-28-10"
+    mel:
+        gamma: 20.0
+        gamma2: 10.0
+        katz_factor: 0.5
+test:
+    batch_size: 1
+val:
+    episode: 200

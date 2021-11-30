@@ -16,9 +16,11 @@ import random
 
 from modules.fsl_query import make_fsl
 from dataloader import make_distributed_dataloader
-from utils import mean_confidence_interval, AverageMeter, get_world_size, reduce_loss_dict, set_seed
 
-from tqdm import tqdm 
+from engines.utils import mean_confidence_interval, AverageMeter, set_seed
+from engines.distributed_utils import get_world_size, reduce_loss_dict
+
+import tqdm
 
 class DistributedTrainer(object):
     def __init__(self, args, cfg, checkpoint_dir):
@@ -44,7 +46,7 @@ class DistributedTrainer(object):
         self.train_episode_per_epoch = cfg.train.episode_per_epoch
         self.prefix = osp.basename(checkpoint_dir)
         self.writer_dir = self._prepare_summary_snapshots(self.prefix, cfg)
-        self.writer = SummaryWriter(self.writer_dir) if self.writer_dir is not None else None
+        self.writer = SummaryWriter(self.writer_dir) if self.verbose else None
 
         self.checkpoint_dir = checkpoint_dir
         self.epochs = cfg.train.epochs
@@ -121,7 +123,7 @@ class DistributedTrainer(object):
     def validate(self, dataloader):
         accuracies = []
         if self.verbose:
-            dataloader = tqdm(dataloader, ncols=80)
+            dataloader = tqdm.tqdm(dataloader, ncols=80, leave=False)
             acc = AverageMeter()
         for episode, (support_x, support_y, query_x, query_y) in enumerate(dataloader):
             support_x            = support_x.to(self.device)
@@ -160,7 +162,7 @@ class DistributedTrainer(object):
     def train(self, dataloader, epoch):
         losses = AverageMeter()
         if self.verbose:
-            dataloader = tqdm(dataloader, ncols=80)
+            dataloader = tqdm.tqdm(dataloader, ncols=80, leave=False)
 
         for episode, (support_x, support_y, query_x, query_y) in enumerate(dataloader):
             support_x            = support_x.to(self.device)
@@ -183,6 +185,7 @@ class DistributedTrainer(object):
 
     def run(self):
         best_accuracy = 0.0
+        best_accuracy_epoch = 0
         set_seed(self.seed, self.verbose)
         val_dataloader = make_distributed_dataloader(
             self.cfg, phase="val", 
@@ -190,7 +193,8 @@ class DistributedTrainer(object):
             distributed_info={"num_replicas": get_world_size(), "rank": self.rank}
         )
 
-        for epoch in range(self.epochs):
+        tqdm_gen = tqdm.tqdm(range(self.train_start_epoch, self.epochs), ncols=80)
+        for epoch in tqdm_gen:
             train_dataloader = make_distributed_dataloader(
                 self.cfg, 
                 phase="train", 
@@ -213,12 +217,13 @@ class DistributedTrainer(object):
             total_accuracies = validation_results_reduced["acc"].item()
             total_h = validation_results_reduced["h"].item()
             if self.verbose:
-                mesg = "\t Testing epoch {} validation accuracy: {:.4f}, h: {:.3f}".format(epoch + 1, total_accuracies, total_h)
-                print(mesg)
+                mesg = "loss/val: {:.3f}/{:.4f}, best val: {:.4f}({})".format(loss_train, total_accuracies, best_accuracy, best_accuracy_epoch)
+                tqdm_gen.set_description(mesg)
                 self.writer.add_scalar('acc_val', total_accuracies, epoch + 1)
 
             if total_accuracies > best_accuracy:
                 best_accuracy = total_accuracies
+                best_accuracy_epoch = epoch + 1
                 self.best_state_dict_for_distributed = copy.deepcopy(self.fsl.state_dict())
 
                 if self.verbose:

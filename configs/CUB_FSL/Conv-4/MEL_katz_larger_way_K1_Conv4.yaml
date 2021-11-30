@@ -1,0 +1,20 @@
+train:
+    batch_size: 1
+    epochs: 1200
+    learning_rate: 0.1
+    lr_decay: 0.1
+    lr_decay_milestones: [400, 800]
+    optim: "SGD"
+    episode_first_dataloader: False
+    n_way: 30
+model:
+    query: "MEL"
+    mel:
+        gamma: 40.0
+        gamma2: 10.0
+        katz_factor: 0.5
+    encoder: "FourLayer_64F_4x"
+test:
+    batch_size: 1
+val:
+    interval: 20

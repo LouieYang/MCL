@@ -13,42 +13,10 @@ from .base_datasets import BaseDataset
 from copy import deepcopy
 
 class UnrepeatedDataset(BaseDataset):
-    def __init__(self, cfg, phase="train"):
-
-        if phase == "train":
-            self.n_way = cfg.train.n_way
-            self.k_shot = cfg.train.k_shot
-        elif phase == "val":
-            self.n_way = cfg.val.n_way
-            self.k_shot = cfg.val.k_shot
-        else:
-            self.n_way = cfg.test.n_way
-            self.k_shot = cfg.test.k_shot
+    def __init__(self, cfg, phase="train", transform=None):
+        super().__init__(cfg, phase, transform)
 
         self.data_list = self.prepare_data_list(cfg, phase)
-        self.transform = self.prepare_transform(cfg, phase)
-
-    def prepare_transform(self, cfg, phase):
-        norm = transforms.Normalize(
-            np.array([x / 255.0 for x in [125.3, 123.0, 113.9]]),
-            np.array([x / 255.0 for x in [63.0, 62.1, 66.7]])
-        )
-        if phase == "train":
-            t = [
-                transforms.Resize([92, 92]),
-                transforms.RandomCrop(84),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                norm
-            ]
-        else:
-            t = [
-                transforms.Resize([92, 92]),
-                transforms.CenterCrop(84),
-                transforms.ToTensor(),
-                norm
-            ]
-        return transforms.Compose(t)
 
     def prepare_data_list(self, cfg, phase):
         folder = osp.join(cfg.data.image_dir, phase)
@@ -71,7 +39,7 @@ class UnrepeatedDataset(BaseDataset):
         query_per_class_per_episode = cfg.train.query_per_class_per_episode if phase == "train" else cfg.test.query_per_class_per_episode
         temp_class_list = deepcopy(class_list)
         temp_class_img_dict = deepcopy(class_img_dict)
-        while len(temp_class_img_dict) >= self.n_way:
+        while len(temp_class_list) >= self.n_way:
             episode = []
             classes = random.sample(temp_class_list, self.n_way)
             for t, c in enumerate(classes):

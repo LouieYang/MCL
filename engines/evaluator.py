@@ -10,7 +10,7 @@ from tqdm import tqdm
 import random
 from modules.fsl_query import make_fsl
 from dataloader import make_dataloader
-from utils import mean_confidence_interval, AverageMeter, set_seed
+from engines.utils import mean_confidence_interval, AverageMeter, set_seed
 
 class evaluator(object):
     def __init__(self, cfg, checkpoint_dir):
@@ -31,7 +31,6 @@ class evaluator(object):
         self.prediction_dir = osp.join(
             self.prediction_folder,
             "predictions.txt"
-            # osp.basename(checkpoint_dir).replace(".pth", ".txt")
         )
 
         self.checkpoint_dir = checkpoint_dir

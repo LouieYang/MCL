@@ -15,6 +15,8 @@ class FSLQuery(nn.Module):
         self.forward_encoding = cfg.model.forward_encoding
         self.pyramid_list = self._parse_encoding_params()
 
+        self.cfg = cfg
+
     def _parse_encoding_params(self):
         idx = self.forward_encoding.find('-')
         if idx < 0:
@@ -75,7 +77,21 @@ class FSLQuery(nn.Module):
 
         return support_xf, query_xf
 
+    def horizontal_flip_aug(self, support_x, support_y, k_shot):
+        b, s, c, h, w = support_x.shape
+        support_x = support_x.view(b, -1, k_shot, c, h, w)
+        reflected_support_x = torch.flip(support_x, (-1,))
+        support_x = torch.cat([support_x, reflected_support_x], dim=2).view(b, -1, c, h, w)
+        support_y = support_y.view(b, -1, k_shot)
+        support_y = torch.cat([support_y, support_y], dim=-1).view(b, -1)
+        k_shot = 2 * k_shot
+        return support_x, support_y, k_shot
+
+
     def forward(self, support_x, support_y, query_x, query_y, n_way, k_shot):
+        if self.cfg.model.query.startswith("DSN") and k_shot == 1:
+            support_x, support_y, k_shot = self.horizontal_flip_aug(support_x, support_y, k_shot)
+
         if self.forward_encoding == "FCN":
             support_xf, query_xf = self.forward_FCN(support_x, support_y, query_x, query_y)
         elif self.forward_encoding.startswith("Grid"):

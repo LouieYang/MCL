@@ -8,8 +8,8 @@ import shutil
 sys.path.append(osp.abspath(osp.join(osp.abspath(__file__), '..', '..')))
 
 from configs.miniimagenet_default import cfg
-from trainer import trainer as t
-from utils import cfg_to_dataset
+from engines.trainer import trainer as t
+from experiments.utils import cfg_to_dataset
 
 def main():
     parser = argparse.ArgumentParser()
@@ -20,6 +20,7 @@ def main():
     parser.add_argument('-c', '--checkpoint_base', type=str, dest='checkpoint_base', default='./checkpoint')
     parser.add_argument('-s', '--snapshot_base', type=str, dest='snapshot_base', default='./snapshots')
     parser.add_argument('-e', '--eval_after_train', type=int, dest='eval_after_train', default=1)
+    parser.add_argument('--pretrain_path', type=str, default='')
     parser.add_argument('rest', nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
@@ -43,6 +44,9 @@ def main():
         if not osp.exists(d):
             os.mkdir(d)
 
+    if args.pretrain_path and osp.isfile(args.pretrain_path):
+        os.symlink(osp.abspath(args.pretrain_path), osp.join(checkpoint_dir, osp.basename(args.pretrain_path)))
+
     print("[*] Source Image Path: {}".format(cfg.data.image_dir))
     print("[*] Target Checkpoint Path: {}".format(checkpoint_dir))
 
@@ -60,7 +64,10 @@ def main():
         evaluator = e(cfg, trainer.snapshot_name("best"))
         accuracy = evaluator.run()
         shutil.copyfile(evaluator.prediction_dir, osp.join(snapshot_dir, osp.basename(evaluator.prediction_dir)))
-        shutil.move(snapshot_dir, snapshot_dir + "_{:.3f}".format(accuracy * 100))
+        target_snapshot_path = snapshot_dir + "_{:.3f}".format(accuracy * 100)
+        shutil.move(snapshot_dir, target_snapshot_path)
+
+        print("[*] Saving to {}".format(osp.abspath(target_snapshot_path)))
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,19 @@
+train:
+    batch_size: 1
+    epochs: 100
+    learning_rate: 0.001
+    lr_decay: 0.5
+    lr_decay_epoch: 20
+    optim: "Adam"
+    episode_first_dataloader: False
+    n_way: 10
+model:
+    query: "MEL"
+    encoder: "FourLayer_64F_4x"
+    mel:
+        gamma: 40.0
+        gamma2: 10.0
+test:
+    batch_size: 1
+val:
+    interval: 5
