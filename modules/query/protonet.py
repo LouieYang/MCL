@@ -7,9 +7,19 @@ from modules.utils import l2distance
 
 @registry.Query.register("ProtoNet")
 class ProtoNet(nn.Module):
-
     def __init__(self, in_channels, cfg):
         super().__init__()
+        """
+        @inproceedings{snell2017prototypical,
+            title={Prototypical networks for few-shot learning},
+            author={Snell, Jake and Swersky, Kevin and Zemel, Richard},
+            booktitle={NIPS},
+            pages={4077--4087},
+            year={2017}
+        }
+
+        https://github.com/Sha-Lab/FEAT/blob/master/model/models/protonet.py
+        """
 
         self.cfg = cfg
         self.criterion = nn.CrossEntropyLoss()

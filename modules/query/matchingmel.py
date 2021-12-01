@@ -9,7 +9,6 @@ from .mel_utils import MELMask
 
 @registry.Query.register("MatchingMEL")
 class MatchingMEL(nn.Module):
-
     def __init__(self, in_channels, cfg):
         super().__init__()
 

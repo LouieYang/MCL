@@ -5,7 +5,6 @@ import torch.nn.functional as F
 import modules.registry as registry
 
 class RelationHead(nn.Module):
-    """docstring for RelationNetwork for Backbone"""
     def __init__(self, in_channels):
         super().__init__()
         self.fc1 = nn.Linear(in_channels * 2, in_channels // 2)
@@ -28,10 +27,19 @@ class RelationHead(nn.Module):
         return out
 
 @registry.Query.register("RelationNet")
-class RelationCompare(nn.Module):
-
+class RelationNet(nn.Module):
     def __init__(self, in_channels, cfg):
         super().__init__()
+        """
+        @inproceedings{sung2018learning,
+            title={Learning to Compare: Relation Network for Few-Shot Learning},
+            author={Sung, Flood and Yang, Yongxin and Zhang, Li and Xiang, Tao and Torr, Philip HS and Hospedales, Timothy M},
+            booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+            year={2018}
+        }
+
+        https://github.com/floodsung/LearningToCompare_FSL
+        """
 
         self.cfg = cfg
         self.rn = RelationHead(in_channels)

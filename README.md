@@ -125,7 +125,7 @@ Experimental results on few-shot learning datasets with ResNet-12/Conv-4 backbon
 ## Start your own methods
 
 We reimplement many of state-of-the-art methods in our unified framework according to their original implementations, *i.e.*, 
-DN4, DeepEMD, FRN, DSN, MetaOptNet, R2D2, CTX, Baseline, Baseline++, NegativeMargin, ProtoNet, RelationNet, MatchingNet.
+[DN4](https://github.com/WenbinLee/DN4), [DeepEMD](https://github.com/icoz69/DeepEMD), [FRN](https://github.com/Tsingularity/FRN), [DSN](https://github.com/chrysts/dsn_fewshot), [MetaOptNet](https://github.com/kjunelee/MetaOptNet), [R2D2](https://github.com/kjunelee/MetaOptNet), [CTX](https://github.com/lucidrains/cross-transformers-pytorch), [Baseline](https://github.com/wyharveychen/CloserLookFewShot), [Baseline++](https://github.com/wyharveychen/CloserLookFewShot), [NegativeMargin](https://github.com/bl0/negative-margin.few-shot), [ProtoNet](https://github.com/Sha-Lab/FEAT/blob/master/model/models/protonet.py), RelationNet, [MatchingNet](https://github.com/Sha-Lab/FEAT/blob/master/model/models/matchnet.py).
 
 It is easy to implement your own method in our unified framework by adding the similar `your-own-method.py` in the directory `./modules/query/` like the others.
 

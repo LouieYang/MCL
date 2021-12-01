@@ -7,7 +7,6 @@ import modules.registry as registry
 from .mel_utils import MELMask
 
 class RelationHead(nn.Module):
-    """docstring for RelationNetwork for Backbone"""
     def __init__(self, in_channels):
         super().__init__()
         self.fc1 = nn.Linear(in_channels * 2, in_channels // 2)
@@ -30,8 +29,7 @@ class RelationHead(nn.Module):
         return out
 
 @registry.Query.register("RelationMEL")
-class RelationCompare(nn.Module):
-
+class RelationMEL(nn.Module):
     def __init__(self, in_channels, cfg):
         super().__init__()
 

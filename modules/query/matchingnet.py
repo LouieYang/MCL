@@ -5,12 +5,21 @@ import torch.nn.functional as F
 import modules.registry as registry
 from modules.utils import  _l2norm
 
-
 @registry.Query.register("MatchingNet")
 class MatchingNet(nn.Module):
-
     def __init__(self, in_channels, cfg):
         super().__init__()
+        """
+        @inproceedings{vinyals2016matching,
+            title={Matching networks for one shot learning},
+            author={Vinyals, Oriol and Blundell, Charles and Lillicrap, Timothy and Kavukcuoglu, Koray and Wierstra, Daan},
+            booktitle={Proceedings of the 30th International Conference on Neural Information Processing Systems},
+            pages={3637--3645},
+            year={2016}
+        }
+
+        https://github.com/Sha-Lab/FEAT/blob/master/model/models/matchnet.py
+        """
 
         self.cfg = cfg
         self.criterion = nn.CrossEntropyLoss()
