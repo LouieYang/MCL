@@ -60,7 +60,7 @@ def main():
 
     if args.eval_after_train:
         print("[*] Running Evaluations ...")
-        from evaluator import evaluator as e
+        from engines.evaluator import evaluator as e
         evaluator = e(cfg, trainer.snapshot_name("best"))
         accuracy = evaluator.run()
         shutil.copyfile(evaluator.prediction_dir, osp.join(snapshot_dir, osp.basename(evaluator.prediction_dir)))
