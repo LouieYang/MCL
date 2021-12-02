@@ -77,7 +77,7 @@ class PretrainFRN(BasePretrainer):
         neg_l2_dist = recon_dist.neg().view(-1, h * w, self.n_way).mean(1)
         return neg_l2_dist
 
-    def forward(self, x, y):
+    def forward_train(self, x, y):
         enc = self.encoder(x)
         enc = enc / math.sqrt(self.encoder.out_channels)
         b, c, h, w = enc.shape

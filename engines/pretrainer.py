@@ -121,7 +121,7 @@ class Pretrainer(object):
             batch, _ = [b.to(self.device) for b in batch]
             support_x, query_x = batch[:self.cfg.val.n_way].unsqueeze(0), batch[self.cfg.val.n_way:].unsqueeze(0)
             support_y = None
-            rewards = self.model.forward_test(support_x, support_y, query_x, query_y)
+            rewards = self.model(support_x, support_y, query_x, query_y)
             total_rewards = np.sum(rewards)
 
             accuracy = total_rewards / (query_y.numel())

@@ -21,7 +21,7 @@ class PretrainDN4(BasePretrainer):
         self.inner_simi = Similarity(cfg, metric='cosine')
         self.scale = nn.Parameter(torch.FloatTensor([1.0]),requires_grad=True)
 
-    def forward(self, x, y):
+    def forward_train(self, x, y):
         enc = self.encoder(x)
         enc = enc[None] # [1, b, c, h, w]
 

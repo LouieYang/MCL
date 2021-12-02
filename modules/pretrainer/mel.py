@@ -28,7 +28,7 @@ class PretrainMEL(BasePretrainer):
 
         self.criterion = nn.NLLLoss()
 
-    def forward(self, x, y):
+    def forward_train(self, x, y):
         alpha = self.katz_factor
         alpha_2 = alpha * alpha
 

@@ -18,8 +18,14 @@ class BasePretrainer(nn.Module):
         self.inner_simi = Similarity(cfg, metric='cosine')
         self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, x, y):
+    def forward_train(self, x, y):
         pass
 
     def forward_test(self, support_x, support_y, query_x, query_y):
         pass
+
+    def forward(self, *args, **kwargs):
+        if self.training:
+            return self.forward_train(*args, **kwargs)
+        else:
+            return self.forward_test(*args, **kwargs)

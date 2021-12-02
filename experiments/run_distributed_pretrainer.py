@@ -9,7 +9,7 @@ sys.path.append(osp.abspath(osp.join(osp.abspath(__file__), '..', '..')))
 
 from configs.miniimagenet_default import cfg
 from engines.distributed_pretrainer import DistributedPretrainer as t
-from engines.distributed_utils import synchronize, is_main_process
+from engines.distributed_utils import synchronize, is_main_process, get_world_size
 from experiments.utils import cfg_to_dataset
 
 def main():
@@ -20,7 +20,6 @@ def main():
     parser.add_argument('-c', '--checkpoint_base', type=str, dest='checkpoint_base', default='./checkpoint')
     parser.add_argument('--local_rank', '-r', type=int, default=0)
     parser.add_argument('--base_rank', '-b', type=int, default=0)
-    parser.add_argument('--world-size', '-w', type=int, default=1)
     parser.add_argument('--init-method', '-i', type=str, default='env://')
     parser.add_argument('--socket-ifname', '-s', type=str, default='lo')
 
@@ -34,6 +33,7 @@ def main():
         cfg.merge_from_file(args.cfg)
     cfg.data.image_dir = osp.join(cfg.data.root, dataset)
 
+    args.world_size = get_world_size()
     args.distributed = args.world_size > 1
     if args.distributed:
         torch.cuda.set_device(args.local_rank)

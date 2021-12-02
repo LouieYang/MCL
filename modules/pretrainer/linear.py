@@ -15,7 +15,7 @@ class PretrainLinear(BasePretrainer):
         self.fake_classifier = nn.Linear(self.encoder.out_channels, cfg.pre.pretrain_num_class)
         self.avg_pool = nn.AvgPool2d(int(math.sqrt(cfg.pre.resolution)), stride=1)
 
-    def forward(self, x, y):
+    def forward_train(self, x, y):
         enc = self.encoder(x)
         enc = self.avg_pool(enc).squeeze(-1).squeeze(-1)
         out = self.fake_classifier(enc)
