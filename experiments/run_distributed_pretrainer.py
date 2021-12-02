@@ -33,16 +33,19 @@ def main():
         cfg.merge_from_file(args.cfg)
     cfg.data.image_dir = osp.join(cfg.data.root, dataset)
 
-    args.world_size = get_world_size()
-    args.distributed = args.world_size > 1
-    if args.distributed:
-        torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(
-            backend="nccl", init_method=args.init_method, 
-            rank=args.local_rank + args.base_rank, 
-            world_size=args.world_size
-        )
-        synchronize()
+    if 'WORLD_SIZE' in os.environ:
+        world_size = int(os.environ['WORLD_SIZE'])
+        args.distributed = True
+    else:
+        return
+
+    torch.cuda.set_device(args.local_rank)
+    torch.distributed.init_process_group(
+        backend="nccl", init_method=args.init_method,
+        rank=args.local_rank + args.base_rank,
+        world_size=world_size
+    )
+    synchronize()
 
     checkpoint_dir = osp.join(args.checkpoint_base, args.checkpoint_dir)
     if is_main_process():
