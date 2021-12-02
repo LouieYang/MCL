@@ -64,15 +64,24 @@ def make_distributed_dataloader(cfg, phase, batch_size, distributed_info, epoch=
         dataset = PreDataset(cfg, phase)
     else:
         dataset = _decide_dataset(cfg, phase, None, None)
-    sampler = DistributedSampler(
-        dataset, 
-        num_replicas=distributed_info["num_replicas"],
-        rank=distributed_info["rank"],
-        shuffle=True
-    )
-    sampler.set_epoch(epoch)
-    batch_sampler = torch.utils.data.sampler.BatchSampler(sampler, batch_size, drop_last=True)
+
+    if pretrain and phase == "val":
+        batch_sampler = CategoriesSampler(
+            dataset.label,
+            cfg.pre.val_episode, cfg.val.n_way,
+            1 + cfg.val.query_per_class_per_episode
+        )
+    else:
+        sampler = DistributedSampler(
+            dataset,
+            num_replicas=distributed_info["num_replicas"],
+            rank=distributed_info["rank"],
+            shuffle=True
+        )
+        sampler.set_epoch(epoch)
+        batch_sampler = torch.utils.data.sampler.BatchSampler(sampler, batch_size, drop_last=True)
     dataloader = torch.utils.data.DataLoader(
         dataset, num_workers=4, batch_sampler=batch_sampler
     )
     return dataloader
+
