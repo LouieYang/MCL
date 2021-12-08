@@ -15,17 +15,20 @@ import tqdm
 from modules.pretrainer import make_pretrain_model
 from modules.fsl_query import make_fsl
 from dataloader import make_predataloader
-from engines.utils import mean_confidence_interval, AverageMeter, set_seed
+from engines.utils import mean_confidence_interval, AverageMeter, set_seed, GradualWarmupScheduler
 
 class Pretrainer(object):
     def __init__(self, cfg, checkpoint_dir):
+
+        self.seed = cfg.seed
 
         self.prefix = osp.basename(checkpoint_dir)
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.checkpoint_dir = checkpoint_dir
         self.prefix = osp.basename(checkpoint_dir)
         self.dataset_prefix = osp.basename(cfg.data.image_dir).lower()
-        self.writer = SummaryWriter(self._prepare_summary_snapshots(self.prefix, cfg))
+        self.writer_dir = self._prepare_summary_snapshots(self.prefix, cfg)
+        self.writer = SummaryWriter(self.writer_dir)
 
         self.epochs = cfg.pre.epochs
 
@@ -42,7 +45,7 @@ class Pretrainer(object):
             weight_decay=cfg.train.sgd_weight_decay,
             nesterov=True
         )
-        pths = [osp.basename(f) for f in glob.glob(osp.join(checkpoint_dir, "*.pth")) if "best" not in f]
+        pths = [osp.basename(f) for f in glob.glob(osp.join(checkpoint_dir, "*_pre_all.pth")) if "best" not in f]
         if pths:
             pths_epoch = [''.join(filter(str.isdigit, f[:f.find('_')])) for f in pths]
             pths = [p for p, e in zip(pths, pths_epoch) if e]
@@ -50,7 +53,7 @@ class Pretrainer(object):
             self.train_start_epoch = max(pths_epoch)
             c = osp.join(checkpoint_dir, pths[pths_epoch.index(self.train_start_epoch)])
             state_dict = torch.load(c)
-            self.model.load_state_dict(state_dict["fsl"], strict=False)
+            self.model.load_state_dict(state_dict)
             print("[*] Continue training from checkpoints: {}".format(c))
             lr_scheduler_last_epoch = self.train_start_epoch
             if "optimizer" in state_dict and state_dict["optimizer"] is not None:
@@ -60,9 +63,13 @@ class Pretrainer(object):
             lr_scheduler_last_epoch = -1
 
         if cfg.pre.lr_scheduler == "CosineAnnealingLR":
-            self.lr_scheduler = CosineAnnealingLR(self.optim, T_max=cfg.pre.epochs, last_epoch=lr_scheduler_last_epoch)
+            lr_scheduler = CosineAnnealingLR(self.optim, T_max=cfg.pre.epochs, last_epoch=lr_scheduler_last_epoch)
         else:
-            self.lr_scheduler = MultiStepLR(self.optim, milestones=self.lr_decay_milestones, gamma=self.lr_decay, last_epoch=lr_scheduler_last_epoch)
+            lr_scheduler = MultiStepLR(self.optim, milestones=self.lr_decay_milestones, gamma=self.lr_decay, last_epoch=lr_scheduler_last_epoch)
+        if cfg.pre.warmup_scheduler_epoch > 0:
+            self.lr_scheduler = GradualWarmupScheduler(self.optim, multiplier=1, total_epoch=cfg.pre.warmup_scheduler_epoch, after_scheduler=lr_scheduler)
+        else:
+            self.lr_scheduler = lr_scheduler
         self.fsl = make_fsl(cfg).to(self.device)
 
         self.cfg = cfg
@@ -70,6 +77,7 @@ class Pretrainer(object):
 
         self.snapshot_epoch = cfg.pre.snapshot_epoch
         self.snapshot_interval = cfg.pre.snapshot_interval
+        self.snapshot_for_meta = "{}-e0_pre.pth".format(self.dataset_prefix)
 
     def _prepare_summary_snapshots(self, prefix, cfg):
         summary_prefix = osp.join(cfg.train.summary_snapshot_base, prefix)
@@ -82,12 +90,16 @@ class Pretrainer(object):
     def save_model(self, postfix=None):
         self.fsl.encoder.load_state_dict(self.model.encoder.state_dict())
         self.fsl.eval()
-        filename = "{}-e0_pre.pth".format(self.dataset_prefix) if postfix is None else "e{}_pre.pth".format(postfix)
-        filename = osp.join(self.checkpoint_dir, filename)
-        state = {
+        filename_for_meta = self.snapshot_for_meta if postfix is None else "e{}_pre.pth".format(postfix)
+        filename_all = filename_for_meta.replace("pre", "pre_all")
+        filename_for_meta = osp.join(self.checkpoint_dir, filename_for_meta)
+        filename_all = osp.join(self.checkpoint_dir, filename_all)
+        state_for_meta = {
             'fsl': self.fsl.state_dict()
         }
-        torch.save(state, filename)
+        state_all = self.model.state_dict()
+        torch.save(state_for_meta, filename_for_meta)
+        torch.save(state_all, filename_all)
 
     def train(self, dataloader, epoch):
         losses = AverageMeter()
@@ -138,7 +150,7 @@ class Pretrainer(object):
     def run(self):
         best_accuracy = 0.0
         best_epoch = -1
-        set_seed(1)
+        set_seed(self.seed)
         dataloader = make_predataloader(self.cfg, phase="train", batch_size=self.cfg.pre.batch_size)
         val_dataloader = make_predataloader(self.cfg, phase="val")
         tqdm_gen = tqdm.tqdm(range(self.train_start_epoch, self.epochs), ncols=80)
@@ -155,15 +167,11 @@ class Pretrainer(object):
                     test_accuracy, h = self.validate(val_dataloader)
 
                 self.writer.add_scalar('acc_val', test_accuracy, epoch_log)
-                # mesg = "\t Testing epoch {} validation accuracy: {:.3f}".format(epoch_log, test_accuracy)
-                # print(mesg)
                 if test_accuracy > best_accuracy:
                     best_accuracy = test_accuracy
                     self.save_model()
                     best_epoch = epoch_log
 
-                # self.save_model(postfix=epoch_log)
-                # print("Current best epoch: {}, accuracy: {:.3f}".format(best_epoch, best_accuracy))
                 mesg = "loss/val: {:.3f}/{:.4f}, best val: {:.4f}({})".format(loss_train, test_accuracy, best_accuracy, best_epoch)
                 tqdm_gen.set_description(mesg)
                 self.model.train()

@@ -47,15 +47,32 @@ class DistributedTrainer(object):
         self.prefix = osp.basename(checkpoint_dir)
         self.writer_dir = self._prepare_summary_snapshots(self.prefix, cfg)
         self.writer = SummaryWriter(self.writer_dir) if self.verbose else None
-
+        self.lr = cfg.train.learning_rate
+        self.lr_decay = cfg.train.lr_decay
+        self.lr_decay_epoch = cfg.train.lr_decay_epoch
         self.checkpoint_dir = checkpoint_dir
         self.epochs = cfg.train.epochs
 
         fsl = make_fsl(cfg)
+        pths = [osp.basename(f) for f in glob.glob(osp.join(checkpoint_dir, "*.pth")) if "best" not in f]
+        if pths:
+            pths_epoch = [''.join(filter(str.isdigit, f[:f.find('_')])) for f in pths]
+            pths = [p for p, e in zip(pths, pths_epoch) if e]
+            pths_epoch = [int(e) for e in pths_epoch if e]
+            self.train_start_epoch = max(pths_epoch)
+            c = osp.join(checkpoint_dir, pths[pths_epoch.index(self.train_start_epoch)])
+            state_dict = torch.load(c, map_location=torch.device('cpu'))
+            fsl.load_state_dict(state_dict["fsl"])
+            if self.verbose:
+                print("[*] Continue training from checkpoints: {}".format(c))
+            lr_scheduler_last_epoch = self.train_start_epoch
+            # if "optimizer" in state_dict and state_dict["optimizer"] is not None:
+            #    self.optim.load_state_dict(state_dict["optimizer"])
+        else:
+            self.train_start_epoch = 0
+            lr_scheduler_last_epoch = -1
+
         fsl = torch.nn.SyncBatchNorm.convert_sync_batchnorm(fsl).to(self.device)
-        self.lr = cfg.train.learning_rate
-        self.lr_decay = cfg.train.lr_decay
-        self.lr_decay_epoch = cfg.train.lr_decay_epoch
         if cfg.train.optim == "Adam":
             self.optim = Adam(fsl.parameters(),lr=cfg.train.learning_rate, betas=cfg.train.adam_betas)
         elif cfg.train.optim == "SGD":
@@ -69,23 +86,6 @@ class DistributedTrainer(object):
         else:
             raise NotImplementedError
 
-        pths = [osp.basename(f) for f in glob.glob(osp.join(checkpoint_dir, "*.pth")) if "best" not in f]
-        if pths:
-            pths_epoch = [''.join(filter(str.isdigit, f[:f.find('_')])) for f in pths]
-            pths = [p for p, e in zip(pths, pths_epoch) if e]
-            pths_epoch = [int(e) for e in pths_epoch if e]
-            self.train_start_epoch = max(pths_epoch)
-            c = osp.join(checkpoint_dir, pths[pths_epoch.index(self.train_start_epoch)])
-            state_dict = torch.load(c)
-            fsl.load_state_dict(state_dict["fsl"])
-            if self.verbose:
-                print("[*] Continue training from checkpoints: {}".format(c))
-            lr_scheduler_last_epoch = self.train_start_epoch
-            if "optimizer" in state_dict and state_dict["optimizer"] is not None:
-                self.optim.load_state_dict(state_dict["optimizer"])
-        else:
-            self.train_start_epoch = 0
-            lr_scheduler_last_epoch = -1
         self.cfg = cfg
         self.fsl = torch.nn.parallel.DistributedDataParallel(
             fsl, device_ids=[self.local_rank], output_device=self.local_rank,
@@ -193,7 +193,9 @@ class DistributedTrainer(object):
             distributed_info={"num_replicas": get_world_size(), "rank": self.rank}
         )
 
-        tqdm_gen = tqdm.tqdm(range(self.train_start_epoch, self.epochs), ncols=80)
+        tqdm_gen = range(self.train_start_epoch, self.epochs)
+        if self.verbose:
+            tqdm_gen = tqdm.tqdm(tqdm_gen, ncols=80)
         for epoch in tqdm_gen:
             train_dataloader = make_distributed_dataloader(
                 self.cfg, 
@@ -216,6 +218,7 @@ class DistributedTrainer(object):
             validation_results_reduced = reduce_loss_dict(validation_results)
             total_accuracies = validation_results_reduced["acc"].item()
             total_h = validation_results_reduced["h"].item()
+
             if self.verbose:
                 mesg = "loss/val: {:.3f}/{:.4f}, best val: {:.4f}({})".format(loss_train, total_accuracies, best_accuracy, best_accuracy_epoch)
                 tqdm_gen.set_description(mesg)

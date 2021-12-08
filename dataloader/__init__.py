@@ -3,6 +3,7 @@ import os.path as osp
 import torch
 import torch.nn as nn
 import torch.utils.data as data
+from functools import partial
 
 from .base_datasets import BaseDataset
 from .grid_datasets import GridDataset
@@ -10,14 +11,14 @@ from .unrepeated_datasets import UnrepeatedDataset
 from .distributed_sampler import DistributedSampler
 from .pretrain_datasets import PreDataset
 from .samplers import CategoriesSampler
-from .transforms import resize_randomcrop, reflectpad_randomcrop
+from .transforms import square_resize_randomcrop, reflectpad_randomcrop
 
 def _decide_dataset(cfg, phase, save_summary_dir=None, load_summary_dir=None):
     data_folder = osp.basename(osp.abspath(cfg.data.image_dir))
     if data_folder == "meta_iNat" or data_folder == "tiered_meta_iNat":
-        t = reflectpad_randomcrop
+        t = partial(reflectpad_randomcrop, image_size=cfg.data.image_size, pad_size=cfg.data.pad_size)
     else:
-        t = resize_randomcrop
+        t = partial(square_resize_randomcrop, image_size=cfg.data.image_size, pad_size=cfg.data.pad_size)
 
     if phase != "train" or cfg.train.episode_first_dataloader:
         if cfg.model.forward_encoding.startswith("Grid"):

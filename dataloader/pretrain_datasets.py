@@ -12,9 +12,10 @@ class PreDataset(data.Dataset):
     def __init__(self, cfg, phase="train"):
         super().__init__()
 
+        self.image_size = cfg.data.image_size
+        self.pad_size = cfg.data.pad_size
         self.data_list = self.prepare_data_list(cfg, phase)
         self.transform = self.prepare_transform(cfg, phase)
-
         self.label = [l for (d, l) in self.data_list]
 
     def prepare_transform(self, cfg, phase):
@@ -28,7 +29,7 @@ class PreDataset(data.Dataset):
 
         if phase == "train":
             t = [
-                transforms.RandomResizedCrop(84),
+                transforms.RandomResizedCrop(self.image_size),
                 transforms.ColorJitter(0.4, 0.4, 0.4),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
@@ -36,8 +37,8 @@ class PreDataset(data.Dataset):
             ]
         else:
             t = [
-                transforms.Resize([92, 92]),
-                transforms.CenterCrop(84),
+                transforms.Resize(self.image_size + self.pad_size),
+                transforms.CenterCrop(self.image_size),
                 transforms.ToTensor(),
                 norm
             ]
@@ -50,7 +51,9 @@ class PreDataset(data.Dataset):
             for label in os.listdir(folder) \
             if osp.isdir(osp.join(folder, label)) \
         ]
-        random.shuffle(class_folders)
+        # FIX bugs in pretraining: different seed generate different ids for different class if using shuffle
+        # random.shuffle(class_folders)
+        class_folders = sorted(class_folders) 
 
         x_list = []
         y_list = []

@@ -10,7 +10,7 @@ from PIL import Image
 import csv
 import pickle
 
-from .transforms import resize_randomcrop
+from .transforms import square_resize_randomcrop
 
 class BaseDataset(data.Dataset):
     def __init__(self, cfg, phase="train", transform=None):
@@ -28,7 +28,7 @@ class BaseDataset(data.Dataset):
 
         self.data_list = self.prepare_data_list(cfg, phase)
         if transform is None:
-            self.transform = resize_randomcrop(phase)
+            self.transform = square_resize_randomcrop(phase)
         else:
             self.transform = transform(phase)
 

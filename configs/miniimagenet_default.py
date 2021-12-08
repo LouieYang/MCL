@@ -93,6 +93,8 @@ cfg.test.k_shot = 1
 cfg.data = AttrDict()
 cfg.data.root = "./data/"
 cfg.data.image_dir = "./data/miniImagenet"
+cfg.data.image_size = 84
+cfg.data.pad_size = 8
 
 cfg.pre = AttrDict()
 cfg.pre.pretrainer = "Linear"
@@ -101,6 +103,7 @@ cfg.pre.lr = 0.1
 cfg.pre.lr_decay = 0.1
 cfg.pre.lr_decay_milestones = [100, 200, 250, 300]
 cfg.pre.lr_scheduler = "MultiStepLR"
+cfg.pre.warmup_scheduler_epoch = -1
 cfg.pre.snapshot_epoch = 200
 cfg.pre.snapshot_interval = 5
 

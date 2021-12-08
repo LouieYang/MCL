@@ -15,7 +15,7 @@ import tqdm
 from modules.pretrainer import make_pretrain_model
 from modules.fsl_query import make_fsl
 from dataloader import make_distributed_dataloader
-from engines.utils import mean_confidence_interval, AverageMeter, set_seed
+from engines.utils import mean_confidence_interval, AverageMeter, set_seed, GradualWarmupScheduler
 from engines.distributed_utils import get_world_size, reduce_loss_dict
 
 class DistributedPretrainer(object):
@@ -37,7 +37,8 @@ class DistributedPretrainer(object):
         self.checkpoint_dir = checkpoint_dir
         self.prefix = osp.basename(checkpoint_dir)
         self.dataset_prefix = osp.basename(cfg.data.image_dir).lower()
-        self.writer = SummaryWriter(self._prepare_summary_snapshots(self.prefix, cfg)) if self.verbose else None
+        self.writer_dir = self._prepare_summary_snapshots(self.prefix, cfg)
+        self.writer = SummaryWriter(self.writer_dir) if self.verbose else None
         self.epochs = cfg.pre.epochs
         self.lr = cfg.pre.lr
         self.lr_decay = cfg.pre.lr_decay
@@ -46,6 +47,7 @@ class DistributedPretrainer(object):
         self.cfg.val.episode = cfg.pre.val_episode
         self.snapshot_epoch = cfg.pre.snapshot_epoch
         self.snapshot_interval = cfg.pre.snapshot_interval
+        self.snapshot_for_meta = "{}-e0_pre.pth".format(self.dataset_prefix)
 
         model = make_pretrain_model(cfg)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(self.device)
@@ -58,7 +60,7 @@ class DistributedPretrainer(object):
             nesterov=True
         )
 
-        pths = [osp.basename(f) for f in glob.glob(osp.join(checkpoint_dir, "*.pth")) if "best" not in f]
+        pths = [osp.basename(f) for f in glob.glob(osp.join(checkpoint_dir, "*_pre_all.pth")) if "best" not in f]
         if pths:
             pths_epoch = [''.join(filter(str.isdigit, f[:f.find('_')])) for f in pths]
             pths = [p for p, e in zip(pths, pths_epoch) if e]
@@ -66,7 +68,7 @@ class DistributedPretrainer(object):
             self.train_start_epoch = max(pths_epoch)
             c = osp.join(checkpoint_dir, pths[pths_epoch.index(self.train_start_epoch)])
             state_dict = torch.load(c)
-            model.load_state_dict(state_dict["fsl"], strict=False)
+            model.load_state_dict(state_dict)
             print("[*] Continue training from checkpoints: {}".format(c))
             lr_scheduler_last_epoch = self.train_start_epoch
             if "optimizer" in state_dict and state_dict["optimizer"] is not None:
@@ -79,9 +81,13 @@ class DistributedPretrainer(object):
             model, device_ids=[self.local_rank], output_device=self.local_rank
         )
         if cfg.pre.lr_scheduler == "CosineAnnealingLR":
-            self.lr_scheduler = CosineAnnealingLR(self.optim, T_max=cfg.pre.epochs, last_epoch=lr_scheduler_last_epoch)
+            lr_scheduler = CosineAnnealingLR(self.optim, T_max=cfg.pre.epochs, last_epoch=lr_scheduler_last_epoch)
         else:
-            self.lr_scheduler = MultiStepLR(self.optim, milestones=self.lr_decay_milestones, gamma=self.lr_decay, last_epoch=lr_scheduler_last_epoch)
+            lr_scheduler = MultiStepLR(self.optim, milestones=self.lr_decay_milestones, gamma=self.lr_decay, last_epoch=lr_scheduler_last_epoch)
+        if cfg.pre.warmup_scheduler_epoch > 0:
+            self.lr_scheduler = GradualWarmupScheduler(self.optim, multiplier=1, total_epoch=cfg.pre.warmup_scheduler_epoch, after_scheduler=lr_scheduler)
+        else:
+            self.lr_scheduler = lr_scheduler
         self.fsl = make_fsl(cfg).to(self.device)
 
     def _prepare_summary_snapshots(self, prefix, cfg):
@@ -98,12 +104,16 @@ class DistributedPretrainer(object):
     def save_model(self, postfix=None):
         self.fsl.encoder.load_state_dict(self.model.module.encoder.state_dict())
         self.fsl.eval()
-        filename = "{}-e0_pre.pth".format(self.dataset_prefix) if postfix is None else "e{}_pre.pth".format(postfix)
-        filename = osp.join(self.checkpoint_dir, filename)
-        state = {
+        filename_for_meta = self.snapshot_for_meta if postfix is None else "e{}_pre.pth".format(postfix)
+        filename_all = filename_for_meta.replace("pre", "pre_all")
+        filename_for_meta = osp.join(self.checkpoint_dir, filename_for_meta)
+        filename_all = osp.join(self.checkpoint_dir, filename_all)
+        state_for_meta = {
             'fsl': self.fsl.state_dict()
         }
-        torch.save(state, filename)
+        state_all = self.model.module.state_dict()
+        torch.save(state_for_meta, filename_for_meta)
+        torch.save(state_all, filename_all)
 
     def train(self, dataloader, epoch):
         losses = AverageMeter()
@@ -173,7 +183,9 @@ class DistributedPretrainer(object):
             distributed_info={"num_replicas": self.world_size, "rank": self.rank},
             pretrain=True
         )
-        tqdm_gen = tqdm.tqdm(range(self.train_start_epoch, self.epochs), ncols=80)
+        tqdm_gen = range(self.train_start_epoch, self.epochs)
+        if self.verbose:
+            tqdm_gen = tqdm.tqdm(tqdm_gen, ncols=80)
         for epoch in tqdm_gen:
             epoch_log = epoch + 1
             
@@ -203,4 +215,7 @@ class DistributedPretrainer(object):
                     mesg = "loss/val: {:.3f}/{:.4f}, best val: {:.4f}({})".format(loss_train, total_accuracies, best_accuracy, best_epoch)
                     tqdm_gen.set_description(mesg)
                 self.model.train()
+            elif self.verbose:
+                mesg = "loss: {:.3f}, best val: {:.4f}({})".format(loss_train, best_accuracy, best_epoch)
+                tqdm_gen.set_description(mesg)
             self.lr_scheduler.step()
