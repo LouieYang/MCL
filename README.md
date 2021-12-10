@@ -15,9 +15,7 @@ If you use this code or find this work useful for your research, please cite:
 }
 ```
 
-## Abstract
-
-Few-shot learning (FSL) aims to learn a classifier that can be easily adapted to accommodate new tasks not seen during training, given only a few examples. To handle the limited-data problem in few-shot regimes, recent methods tend to collectively use a set of local features to densely represent an image instead of using a mixed global feature. They generally explore a unidirectional query-to-support paradigm in FSL, \eg, find the nearest/optimal support feature for each query feature and aggregate these local matches for a joint classification. In this paper, we propose a new method Mutual Centralized Learning (MCL) to fully affiliate the two disjoint sets of dense features in a bidirectional paradigm. We associate each local feature with a particle that can bidirectionally random walk in a discrete feature space by the affiliations. To estimate the class probability, we propose the features' accessibility that measures the expected number of visits to the support features of that class in a Markov process. We relate our method to learning a centrality on an affiliation network and demonstrate its capability to be plugged in existing methods by highlighting centralized local features. Experiments show that our method achieves the state-of-the-art on both *mini*ImageNet and *tiered*ImageNet.
+## Overview
 
 <img src='README_imgs/arch.png' width='800'>
 
@@ -29,9 +27,11 @@ The following packages are required to run the scripts:
 
 - [tensorboard](https://www.tensorflow.org/tensorboard)
 
+Some comparing methods may require additional packages to run (e.g, OpenCV in DeepEMD and qpth, cvxpy in MetaOptNet).
+
 ## Dataset prepare
 
-The miniImageNet and tieredImageNet data should be placed in dir "./data/miniImagenet" ("./data/tieredimagenet") with the following format:
+The dataset should be placed in dir "./data/miniImagenet" (or "./data/tieredimagenet") with the following format:
 
 ```
 MCL
@@ -48,7 +48,7 @@ MCL
 │   │   │   ├──────
 ```
 
-The dataset can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1sXJgi9pXo8i3Jj1nk08Sxo6x7dAQjf9u?usp=sharing)
+The general mini-/tieredimagenet dataset can be downloaded from [DeepEMD](https://drive.google.com/drive/folders/1sXJgi9pXo8i3Jj1nk08Sxo6x7dAQjf9u?usp=sharing). The fine-grained datasets (i.e., CUB, meta-iNat and tiered meta-iNat) can be downloaded from [FRN](https://drive.google.com/drive/folders/1gHt-Ynku6Yc3mz6aKVTppIfNmzML1sNG).
 
 ## Train and test
 
@@ -112,7 +112,9 @@ Experimental results on few-shot learning datasets with ResNet-12/Conv-4 backbon
 
 <img src='README_imgs/MCL-basic-compare.png' width='600'>
 
-## MCL Centrality Plugins
+## MCL Centrality Plugins without Meta-training
+
+The centrality plugins experiments follow the pre-train + evaluation setting proposed in [Baseline](https://github.com/wyharveychen/CloserLookFewShot) that directly evaluates the methods without meta-training. We simply run `experiments/run_evaluator.py` on the pre-trained models that gives the following results:
 
 <img src='README_imgs/MCL-plugins.png' width='400'>
 
