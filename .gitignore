@@ -6,4 +6,5 @@ checkpoint/**/
 summary/**/
 snapshots/**/
 predictions/**/
-
+.DS_Store 
+*/.DS_Store
