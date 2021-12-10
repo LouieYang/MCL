@@ -17,7 +17,7 @@ If you use this code or find this work useful for your research, please cite:
 
 ## Overview
 
-<img src='README_imgs/arch.png' width='800'>
+<img src='README_imgs/overview.gif' width='800'>
 
 ## Code Prerequisites
 
