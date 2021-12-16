@@ -36,7 +36,7 @@ class DN4(nn.Module):
             support_xf = support_xf.view(b, n_way, k_shot, c, h, w).mean(2)
             support_xf = support_xf.view(b, n_way, c, h * w)
 
-        innerproduct_matrix = self.inner_simi(support_xf, support_y, query_xf, query_y)
+        innerproduct_matrix = self.inner_simi(support_xf, query_xf)
         topk_value, _ = torch.topk(innerproduct_matrix, self.neighbor_k, -1) # [b, q, N, M_q, neighbor_k]
         similarity_matrix = topk_value.mean(-1).view(b, q, n_way, -1).sum(-1)
         similarity_matrix = similarity_matrix.view(b * q, n_way)

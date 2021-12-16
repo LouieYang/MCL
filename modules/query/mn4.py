@@ -52,7 +52,7 @@ class MN4(nn.Module):
         if self.k_shot_average:
             support_xf = support_xf.view(b, self.n_way, self.k_shot, c, h, w).mean(2)
             support_xf = support_xf.view(b, self.n_way, c, h * w)
-        S = self.inner_simi(support_xf, support_y, query_xf, query_y)
+        S = self.inner_simi(support_xf, query_xf)
         query_mask = self._1MNN_mask(S).float() 
         if self.is_norm:
             nMNN = query_mask.sum(-1).view(-1)

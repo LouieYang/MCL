@@ -80,7 +80,7 @@ class MatchingMEL(nn.Module):
         self.n_way = n_way
         self.k_shot = k_shot
 
-        query_mel, support_mel = self.mel_mask(support_xf, support_y, query_xf, query_y, n_way, k_shot)
+        query_mel, support_mel = self.mel_mask(support_xf, query_xf, n_way, k_shot)
         scores = self.score_func(support_xf, support_y, query_xf, query_y, query_mel, support_mel)
         N = scores.shape[0]
         query_y = query_y.view(N)

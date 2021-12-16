@@ -10,7 +10,7 @@ class Similarity(nn.Module):
         super().__init__()
         self.metric = metric
 
-    def forward(self, support_xf, support_y, query_xf, query_y):
+    def forward(self, support_xf, query_xf):
         # query_xf: [b, q, c, h, w]
         # support_xf: [b, n, c, hxw]
 

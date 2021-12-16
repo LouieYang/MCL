@@ -5,7 +5,6 @@ import torch.nn.functional as F
 
 import modules.registry as registry
 from .base import BasePretrainer
-from modules.query.similarity import Similarity
 
 @registry.Pretrainer.register("MEL")
 class PretrainMEL(BasePretrainer):
@@ -18,7 +17,6 @@ class PretrainMEL(BasePretrainer):
             requires_grad=True
         )
         self.num_category = cfg.pre.pretrain_num_class
-        self.inner_simi = Similarity(cfg, metric='cosine')
 
         self.katz_factor = cfg.model.mel.katz_factor
         self.gamma = nn.Parameter(torch.FloatTensor([cfg.model.mel.gamma]),requires_grad=True)
@@ -36,7 +34,7 @@ class PretrainMEL(BasePretrainer):
         enc = enc[None] # [1, b, c, h, w]
         b, q = enc.shape[:2]
 
-        S = self.inner_simi(self.category_mat, None, enc, None) # [1, b, cat, res, res]
+        S = self.inner_simi(self.category_mat, enc) # [1, b, cat, res, res]
         M_q = S.shape[-2]
         M_s = S.shape[2] * S.shape[-1]
         S = S.permute(0, 1, 3, 2, 4).contiguous().view(b * q, M_q, M_s)
@@ -77,7 +75,7 @@ class PretrainMEL(BasePretrainer):
         support_xf = support_xf.view(b, self.n_way, self.k_shot, c, h, w).mean(2)
         support_xf = support_xf.view(b, self.n_way, c, h * w)
 
-        S = self.inner_simi(support_xf, support_y, query_xf, query_y) # [b, q, N, M_q, M_s]
+        S = self.inner_simi(support_xf, query_xf) # [b, q, N, M_q, M_s]
         M_q = S.shape[-2]
         M_s = S.shape[2] * S.shape[-1]
         S = S.permute(0, 1, 3, 2, 4).contiguous().view(b * q, M_q, M_s)

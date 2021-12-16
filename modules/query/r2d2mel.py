@@ -27,7 +27,7 @@ class R2D2MEL(R2D2):
         self.mel_mask = MELMask(cfg)
 
     def pooling(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
-        query_mel, support_mel = self.mel_mask(support_xf, support_y, query_xf, query_y, n_way, k_shot)
+        query_mel, support_mel = self.mel_mask(support_xf, query_xf, n_way, k_shot)
 
         b, q, c, h, w = query_xf.shape
         s = support_xf.shape[1]

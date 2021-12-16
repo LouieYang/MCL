@@ -129,7 +129,7 @@ class DeepEMD(nn.Module):
             proto = self.normalize_feature(proto)
             query = self.normalize_feature(query)
 
-            S = self.inner_simi(proto.view(-1, c, h * w).unsqueeze(0), None, query[None], None).squeeze(0)
+            S = self.inner_simi(proto.view(-1, c, h * w).unsqueeze(0), query[None]).squeeze(0)
             logits[i] = self.get_emd_distance(S, weight_1, weight_2)
         logits = logits.view(b * q, n_way)
         return logits

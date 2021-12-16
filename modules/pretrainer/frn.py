@@ -5,7 +5,6 @@ import torch.nn.functional as F
 
 import modules.registry as registry
 from .base import BasePretrainer
-from modules.query.similarity import Similarity
 
 @registry.Pretrainer.register("FRN")
 class PretrainFRN(BasePretrainer):

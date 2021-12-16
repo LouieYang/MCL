@@ -25,7 +25,7 @@ class PretrainDN4(BasePretrainer):
         enc = self.encoder(x)
         enc = enc[None] # [1, b, c, h, w]
 
-        S = self.inner_simi(self.category_mat, None, enc, None) # [1, b, cat, res, res]
+        S = self.inner_simi(self.category_mat, enc) # [1, b, cat, res, res]
         predict = S.max(-1)[0].sum(-1)
         predict = predict.view(-1, self.num_category)
         predict = predict * self.scale
@@ -54,7 +54,7 @@ class PretrainDN4(BasePretrainer):
         support_x = support_x.view(b, self.n_way, self.k_shot, c, h, w).mean(2)
         support_x = support_x.view(b, self.n_way, c, h * w)
 
-        innerproduct_matrix = self.inner_simi(support_x, support_y, query_x, query_y)
+        innerproduct_matrix = self.inner_simi(support_x, query_x)
         topk_value, _ = torch.topk(innerproduct_matrix, 1, -1) # [b, q, N, M_q, neighbor_k]
         similarity_matrix = topk_value.mean(-1).view(b, q, self.n_way, -1).sum(-1)
         similarity_matrix = similarity_matrix.view(b * q, self.n_way)

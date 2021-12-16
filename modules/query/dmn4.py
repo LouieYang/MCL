@@ -34,7 +34,7 @@ class DMN4(nn.Module):
             support_xf = support_xf.view(b, n_way, k_shot, c, h, w).mean(2)
             support_xf = support_xf.view(b, n_way, c, h * w)
 
-        S = self.inner_simi(support_xf, support_y, query_xf, query_y)
+        S = self.inner_simi(support_xf, query_xf)
         M_q, M_s = S.shape[-2:]
         S_class_merged = S.permute(0, 1, 3, 2, 4).contiguous().view(b, q, M_q, -1)
 
