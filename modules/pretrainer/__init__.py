@@ -1,7 +1,5 @@
 from .linear import *
 from .frn import *
-from .dn4 import *
-from .mel import *
 
 import modules.registry as registry
 
