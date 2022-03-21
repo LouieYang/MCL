@@ -2,7 +2,7 @@
 
 This repository contains the public release of the Python implementation of
 
-**Learning to Affiliate: Mutual Centralized Learning for Few-shot Classification**
+**Learning to Affiliate: Mutual Centralized Learning for Few-shot Classification (CVPR 2022)**
 
 If you use this code or find this work useful for your research, please cite:
 
